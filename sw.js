@@ -2,26 +2,26 @@ const APP_VERSION = "v27";
 const STATIC_CACHE = `mydisiplin-static-${APP_VERSION}`;
 const RUNTIME_CACHE = `mydisiplin-runtime-${APP_VERSION}`;
 const STATIC_ASSETS = [
-  "/",
-  "/login.html",
-  "/index.html",
-  "/rekod-kes-baru.html",
-  "/senarai-kes.html",
-  "/dashbord.html",
-  "/kehadiran.html",
-  "/jurnal.html",
-  "/kongsi.html",
-  "/manifest.webmanifest",
-  "/browserconfig.xml",
-  "/offline.html",
-  "/assets/theme.css",
-  "/assets/auth.js",
-  "/icons/icon180.png",
-  "/icons/icon32.png",
-  "/icons/icon192.png",
-  "/icons/icon512.png",
-  "/screenshots/home-portrait.png",
-  "/screenshots/home-landscape.png"
+  "./",
+  "login.html",
+  "index.html",
+  "rekod-kes-baru.html",
+  "senarai-kes.html",
+  "dashbord.html",
+  "kehadiran.html",
+  "jurnal.html",
+  "kongsi.html",
+  "manifest.webmanifest",
+  "browserconfig.xml",
+  "offline.html",
+  "assets/theme.css",
+  "assets/auth.js",
+  "icons/icon180.png",
+  "icons/icon32.png",
+  "icons/icon192.png",
+  "icons/icon512.png",
+  "screenshots/home-portrait.png",
+  "screenshots/home-landscape.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -67,7 +67,7 @@ async function networkFirst(request) {
   } catch (error) {
     const cached = await caches.match(request);
     if (cached) return cached;
-    return caches.match("/offline.html");
+    return caches.match("offline.html");
   }
 }
 

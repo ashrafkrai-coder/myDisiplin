@@ -4,16 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0f766e" />
-  <script src="/assets/auth.js"></script>
+  <script src="assets/auth.js"></script>
   <script>
     if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
   </script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="myDisiplin" />
   <title>myDisiplin - Jurnal Harian</title>
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="icon" href="/icons/icon32.png" type="image/png" />
-  <link rel="apple-touch-icon" href="/icons/icon180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon32.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon180.png" />
   <style>
     body {
       margin: 0;
@@ -44,7 +44,7 @@
 </head>
 <body>
   <main>
-    <a href="/">&larr; Kembali ke Utama</a>
+    <a href="index.html">&larr; Kembali ke Utama</a>
     <h1>Jurnal Harian</h1>
     <div class="card">
       <strong>Fokus Hari Ini</strong>
@@ -58,8 +58,10 @@
   </main>
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("sw.js").catch(() => {});
     }
   </script>
 </body>
 </html>
+
+

@@ -7,17 +7,17 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="myDisiplin" />
-  <meta name="msapplication-config" content="/browserconfig.xml" />
+  <meta name="msapplication-config" content="browserconfig.xml" />
   <meta name="msapplication-TileColor" content="#0f766e" />
-  <script src="/assets/auth.js"></script>
+  <script src="assets/auth.js"></script>
   <script>
     if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
   </script>
   <title>myDisiplin</title>
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/assets/theme.css" />
-  <link rel="icon" href="/icons/icon32.png" type="image/png" />
-  <link rel="apple-touch-icon" href="/icons/icon180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="assets/theme.css" />
+  <link rel="icon" href="icons/icon32.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon180.png" />
   <style>
     main {
       width: min(960px, 100%);
@@ -159,10 +159,10 @@
       </div>
     </div>
     <div class="quick-links">
-      <a href="/#carian-murid">Carian Nama Murid</a>
-      <a href="/rekod-kes-baru.html">Rekod Kes Baru</a>
-      <a href="/senarai-kes.html">Senarai Kes</a>
-      <a href="/dashbord.html">Dashbord</a>
+      <a href="index.html#carian-murid">Carian Nama Murid</a>
+      <a href="rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="senarai-kes.html">Senarai Kes</a>
+      <a href="dashbord.html">Dashbord</a>
     </div>
     <section class="search-panel" id="carian-murid">
       <h2>Carian Nama Murid</h2>
@@ -270,7 +270,7 @@
         params.set("nama", student.nama || "");
         params.set("nokp", student.noKp || "");
         params.set("kelas", student.kelas || "");
-        return `/rekod-kes-baru.html?${params.toString()}`;
+        return `rekod-kes-baru.html?${params.toString()}`;
       }
 
       function renderStudents(list) {
@@ -435,7 +435,7 @@
         return;
       }
 
-      navigator.serviceWorker.register("/sw.js").then((registration) => {
+      navigator.serviceWorker.register("sw.js").then((registration) => {
         swStatusEl.textContent = "aktif";
 
         if (registration.waiting) {
@@ -471,3 +471,5 @@
   </script>
 </body>
 </html>
+
+

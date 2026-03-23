@@ -1,16 +1,16 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ms">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0f766e" />
-  <script src="/assets/auth.js"></script>
+  <script src="assets/auth.js"></script>
   <script>
     if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
   </script>
   <title>myDisiplin - Senarai Kes</title>
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/assets/theme.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="assets/theme.css" />
   <style>
     main { width: min(1140px, 100%); }
     .menu { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -45,10 +45,10 @@
 <body>
   <main>
     <div class="menu">
-      <a href="/#carian-murid">Carian Nama Murid</a>
-      <a href="/rekod-kes-baru.html">Rekod Kes Baru</a>
-      <a href="/senarai-kes.html">Senarai Kes</a>
-      <a href="/dashbord.html">Dashbord</a>
+      <a href="index.html#carian-murid">Carian Nama Murid</a>
+      <a href="rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="senarai-kes.html">Senarai Kes</a>
+      <a href="dashbord.html">Dashbord</a>
     </div>
     <h1>Senarai Kes</h1>
     <div class="toolbar no-print">
@@ -69,7 +69,7 @@
     <div id="list-container" class="table-wrap"></div>
   </main>
   <script>
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
     const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
     const SHEET_TAB = "Rekod kes baru";
@@ -367,5 +367,7 @@
   </script>
 </body>
 </html>
+
+
 
 
