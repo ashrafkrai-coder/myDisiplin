@@ -66,6 +66,22 @@
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
+    .password-wrap {
+      margin: 10px 0 6px;
+    }
+    .password-wrap label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #0f3344;
+    }
+    .password-wrap input {
+      width: 100%;
+      border: 1px solid #b8cfdb;
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+    }
     .action-row button {
       width: 100%;
     }
@@ -82,11 +98,15 @@
     <h1 class="title">Log Masuk myDisiplin</h1>
     <p class="muted">Untuk pengguna pertama sila daftar dahulu. Jika sudah daftar sila login.</p>
     <p id="first-user-info" class="first-user-info">Menyemak status pengguna pertama...</p>
+    <div class="password-wrap">
+      <label for="shared-password">Kata Laluan Akses</label>
+      <input id="shared-password" type="password" autocomplete="current-password" placeholder="Masukkan kata laluan" />
+    </div>
     <div class="action-row">
       <button id="signup-google-btn" type="button">Daftar Pengguna Pertama</button>
       <button id="signin-google-btn" type="button">Login Google</button>
     </div>
-    <p class="muted" style="margin-top:10px">Login akan disimpan pada peranti ini untuk akses lebih cepat.</p>
+    <p class="muted" style="margin-top:10px">Login akan disimpan pada peranti ini selepas kata laluan disahkan.</p>
     <div id="login-status" class="status">Menyediakan Firebase Sign-In...</div>
   </section>
 
