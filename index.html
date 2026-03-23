@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="myDisiplin" />
+  <meta name="msapplication-config" content="/browserconfig.xml" />
+  <meta name="msapplication-TileColor" content="#0f766e" />
+  <script src="/assets/auth.js"></script>
+  <script>
+    if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
+  </script>
+  <title>myDisiplin</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/assets/theme.css" />
+  <link rel="icon" href="/icons/icon32.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/icons/icon180.png" />
+  <style>
+    main {
+      width: min(960px, 100%);
+    }
+    .hero {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #f8fffe 0%, #ecfeff 55%, #f0fdfa 100%);
+      border: 1px solid #d9eeea;
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.08);
+      margin-bottom: 12px;
+    }
+    .hero-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      order: 1;
+    }
+    .hero-logo {
+      width: 68px;
+      height: 68px;
+      object-fit: contain;
+      flex: 0 0 auto;
+      order: 2;
+      margin-left: auto;
+      filter: brightness(1.05) saturate(1.04) contrast(1.03);
+    }
+    .hero-text h1 {
+      margin: 0;
+      line-height: 1.1;
+    }
+    .hero-text p {
+      margin: 4px 0 0;
+      color: #334155;
+    }
+    p {
+      line-height: 1.5;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+    button[hidden] {
+      display: none;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .search-panel {
+      padding: 14px;
+      margin: 14px 0;
+    }
+    .search-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .search-grid input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px;
+      font: inherit;
+    }
+    .search-result {
+      margin-top: 12px;
+      padding: 10px;
+    }
+    .search-result p {
+      margin: 4px 0;
+    }
+    .student-item {
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .student-title {
+      margin: 0 0 6px;
+      font-weight: 700;
+      color: #0f766e;
+    }
+    .case-list {
+      margin: 8px 0 0 18px;
+      color: #334155;
+    }
+    .case-empty {
+      margin-top: 8px;
+      color: #64748b;
+    }
+    .student-actions {
+      margin-top: 10px;
+    }
+    .add-record-link {
+      display: inline-block;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    @media (max-width: 760px) {
+      .hero {
+        gap: 10px;
+        padding: 10px 12px;
+      }
+      .hero-text {
+        flex: 1 1 auto;
+      }
+      .hero-logo {
+        width: 54px;
+        height: 54px;
+      }
+      .search-grid {
+        gap: 8px;
+      }
+      .student-item {
+        padding: 9px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="hero">
+      <img
+        class="hero-logo"
+        src="https://i.ibb.co/hJXVWgcN/logo-sekolah.png?v=20260323b"
+        alt="Logo SMK Taman Medan"
+      />
+      <div class="hero-text">
+        <h1>myDisiplin</h1>
+        <p>Aplikasi disiplin SMK Taman Medan untuk rekod dan carian kes.</p>
+      </div>
+    </div>
+    <div class="quick-links">
+      <a href="/#carian-murid">Carian Nama Murid</a>
+      <a href="/rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="/senarai-kes.html">Senarai Kes</a>
+      <a href="/dashbord.html">Dashbord</a>
+    </div>
+    <section class="search-panel" id="carian-murid">
+      <h2>Carian Nama Murid</h2>
+      <form id="student-search-form" class="search-grid">
+        <input id="student-name" type="text" placeholder="Masukkan nama pelajar" />
+        <input id="student-nokp" type="text" placeholder="Masukkan no kp" />
+        <input id="student-class" type="text" placeholder="Masukkan kelas" />
+        <button type="submit">Cari Pelajar</button>
+      </form>
+      <div id="search-output" class="search-result">
+        <p>Sila masukkan maklumat pelajar untuk membuat carian.</p>
+      </div>
+    </section>
+    <div class="actions">
+      <button id="install-btn">Install Aplikasi</button>
+      <button id="logout-btn" class="secondary">Log Keluar</button>
+      <button id="refresh-btn" class="secondary" hidden>Muat Ulang Update</button>
+    </div>
+    <p>Status service worker: <code id="sw-status">menyemak...</code></p>
+    <p>Status pemasangan: <code id="install-status">belum tersedia</code></p>
+  </main>
+
+  <script>
+    (() => {
+      const swStatusEl = document.getElementById("sw-status");
+      const installStatusEl = document.getElementById("install-status");
+      const installBtn = document.getElementById("install-btn");
+      const logoutBtn = document.getElementById("logout-btn");
+      const refreshBtn = document.getElementById("refresh-btn");
+      const studentSearchForm = document.getElementById("student-search-form");
+      const studentNameInput = document.getElementById("student-name");
+      const studentNoKpInput = document.getElementById("student-nokp");
+      const studentClassInput = document.getElementById("student-class");
+      const searchOutput = document.getElementById("search-output");
+      let deferredPrompt;
+      installStatusEl.textContent = "tekan butang Install Aplikasi";
+      const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
+      const SHEET_TAB = "data";
+      const CASES_TAB = "Rekod kes baru";
+      let students = [];
+      let caseRecords = [];
+
+      function normalizeKey(value) {
+        return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      }
+
+      function findColumnIndex(headers, aliases) {
+        return headers.findIndex((header) => aliases.includes(normalizeKey(header)));
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function normalizeName(value) {
+        return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+      }
+
+      function formatTarikhDisplay(value) {
+        const raw = String(value == null ? "" : value).trim();
+        if (!raw) return "-";
+
+        const gviz = raw.match(/^Date\((\d{4}),\s*(\d{1,2}),\s*(\d{1,2})/i);
+        if (gviz) {
+          const year = Number(gviz[1]);
+          const month = Number(gviz[2]) + 1;
+          const day = Number(gviz[3]);
+          const dd = String(day).padStart(2, "0");
+          const mm = String(month).padStart(2, "0");
+          return `${dd}/${mm}/${year}`;
+        }
+
+        const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (iso) {
+          const dd = String(Number(iso[3])).padStart(2, "0");
+          const mm = String(Number(iso[2])).padStart(2, "0");
+          return `${dd}/${mm}/${iso[1]}`;
+        }
+
+        const malay = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (malay) {
+          const dd = String(Number(malay[1])).padStart(2, "0");
+          const mm = String(Number(malay[2])).padStart(2, "0");
+          return `${dd}/${mm}/${malay[3]}`;
+        }
+
+        const native = new Date(raw);
+        if (!Number.isNaN(native.getTime())) {
+          const dd = String(native.getDate()).padStart(2, "0");
+          const mm = String(native.getMonth() + 1).padStart(2, "0");
+          const yyyy = native.getFullYear();
+          return `${dd}/${mm}/${yyyy}`;
+        }
+
+        return raw.replace(/^Date/i, "").trim() || "-";
+      }
+
+      function buildAddRecordUrl(student) {
+        const params = new URLSearchParams();
+        params.set("nama", student.nama || "");
+        params.set("nokp", student.noKp || "");
+        params.set("kelas", student.kelas || "");
+        return `/rekod-kes-baru.html?${params.toString()}`;
+      }
+
+      function renderStudents(list) {
+        if (!list.length) {
+          searchOutput.innerHTML = "<p>Tiada pelajar dijumpai untuk carian ini.</p>";
+          return;
+        }
+
+        searchOutput.innerHTML = list
+          .map((student) => {
+            const studentNameKey = normalizeName(student.nama);
+            const matchedCases = caseRecords.filter((item) => normalizeName(item.nama) === studentNameKey);
+
+            const caseHtml = matchedCases.length
+              ? `<ul class="case-list">${matchedCases.map((item) => `
+                  <li>${escapeHtml(formatTarikhDisplay(item.tarikh))} | ${escapeHtml(item.kategori || "-")} | ${escapeHtml(item.status || "-")} | ${escapeHtml(item.catatan || "-")}</li>
+                `).join("")}</ul>`
+              : `<p class="case-empty">Tiada rekod kesalahan.</p>`;
+
+            return `
+              <div class="student-item">
+                <p class="student-title">${escapeHtml(student.nama || "-")}</p>
+                <p>No KP: ${escapeHtml(student.noKp || "-")} | Kelas: ${escapeHtml(student.kelas || "-")}</p>
+                <p><strong>Rekod Kesalahan:</strong></p>
+                ${caseHtml}
+                <div class="student-actions">
+                  <a class="add-record-link" href="${escapeHtml(buildAddRecordUrl(student))}">Tambah Rekod Baru</a>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function loadStudentsFromSheet() {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_TAB)}&tqx=out:json`;
+        searchOutput.innerHTML = "<p>Memuat data pelajar dari Google Sheet...</p>";
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("Gagal akses sheet");
+          const text = await response.text();
+          const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+          const parsed = JSON.parse(jsonText);
+          const rows = parsed.table.rows || [];
+          const headers = (parsed.table.cols || []).map((col) => col.label || col.id || "");
+
+          const nameCol = findColumnIndex(headers, ["nama", "namamurid", "murid", "namapelajar"]);
+          const noKpCol = findColumnIndex(headers, ["nokp", "nokadpengenalan", "ic", "nokad"]);
+          const classCol = findColumnIndex(headers, ["kelas", "class", "tingkatan"]);
+
+          students = rows
+            .map((row) => (row.c || []).map((cell) => (cell && cell.v != null ? String(cell.v) : "")))
+            .map((cells) => ({
+              nama: nameCol >= 0 ? cells[nameCol] || "" : "",
+              noKp: noKpCol >= 0 ? cells[noKpCol] || "" : "",
+              kelas: classCol >= 0 ? cells[classCol] || "" : ""
+            }))
+            .filter((student) => student.nama || student.noKp || student.kelas);
+
+          if (!students.length) {
+            searchOutput.innerHTML = "<p>Data dijumpai tetapi tiada rekod pelajar yang sah.</p>";
+            return;
+          }
+
+          searchOutput.innerHTML = "<p>Sila masukkan maklumat pelajar untuk membuat carian.</p>";
+        } catch (error) {
+          searchOutput.innerHTML =
+            "<p>Gagal memuat data dari Google Sheet. Pastikan sheet boleh diakses (publish/share) dan cuba semula.</p>";
+        }
+      }
+
+      async function loadCaseRecordsFromSheet() {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(CASES_TAB)}&tqx=out:json`;
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("Gagal akses tab rekod kes");
+          const text = await response.text();
+          const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+          const parsed = JSON.parse(jsonText);
+          const rows = parsed.table.rows || [];
+          const headers = (parsed.table.cols || []).map((col) => col.label || col.id || "");
+
+          const namaCol = findColumnIndex(headers, ["nama", "namamurid", "murid", "namapelajar"]);
+          const tarikhCol = findColumnIndex(headers, ["tarikh", "date"]);
+          const kategoriCol = findColumnIndex(headers, ["kategori", "jeniskesalahan", "jenis"]);
+          const statusCol = findColumnIndex(headers, ["status"]);
+          const catatanCol = findColumnIndex(headers, ["catatan", "butiran", "keterangan"]);
+
+          caseRecords = rows
+            .map((row) => (row.c || []).map((cell) => (cell && cell.v != null ? String(cell.v) : "")))
+            .map((cells) => ({
+              nama: namaCol >= 0 ? cells[namaCol] || "" : "",
+              tarikh: tarikhCol >= 0 ? cells[tarikhCol] || "" : "",
+              kategori: kategoriCol >= 0 ? cells[kategoriCol] || "" : "",
+              status: statusCol >= 0 ? cells[statusCol] || "" : "",
+              catatan: catatanCol >= 0 ? cells[catatanCol] || "" : ""
+            }))
+            .filter((item) => item.nama);
+        } catch {
+          caseRecords = [];
+        }
+      }
+
+      studentSearchForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const nameQuery = studentNameInput.value.trim().toLowerCase();
+        const noKpQuery = studentNoKpInput.value.trim().toLowerCase();
+        const classQuery = studentClassInput.value.trim().toLowerCase();
+
+        if (!students.length) {
+          searchOutput.innerHTML = "<p>Data pelajar belum dimuat. Sila tunggu sebentar dan cuba lagi.</p>";
+          return;
+        }
+
+        const filtered = students.filter((student) => {
+          const matchName = !nameQuery || student.nama.toLowerCase().includes(nameQuery);
+          const matchNoKp = !noKpQuery || student.noKp.toLowerCase().includes(noKpQuery);
+          const matchClass = !classQuery || student.kelas.toLowerCase().includes(classQuery);
+          return matchName && matchNoKp && matchClass;
+        });
+        renderStudents(filtered);
+      });
+
+      Promise.all([loadStudentsFromSheet(), loadCaseRecordsFromSheet()]).catch(() => {});
+
+      window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+        installStatusEl.textContent = "sedia dipasang";
+      });
+
+      installBtn.addEventListener("click", async () => {
+        if (!deferredPrompt) {
+          const ua = navigator.userAgent || "";
+          const isIOS = /iPad|iPhone|iPod/i.test(ua);
+          const isAndroid = /Android/i.test(ua);
+          if (isIOS) {
+            installStatusEl.textContent = "iPhone/iPad: guna Share > Add to Home Screen.";
+          } else if (isAndroid) {
+            installStatusEl.textContent = "Android: buka menu browser (⋮) > Install app / Add to Home screen.";
+          } else {
+            installStatusEl.textContent = "Jika tiada pop-up, buka menu browser dan pilih Install app.";
+          }
+          return;
+        }
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installStatusEl.textContent = "prompt sudah dipaparkan";
+      });
+
+      window.addEventListener("appinstalled", () => {
+        installBtn.disabled = true;
+        installBtn.textContent = "Aplikasi Dipasang";
+        installStatusEl.textContent = "sudah dipasang";
+      });
+
+      if (!("serviceWorker" in navigator)) {
+        swStatusEl.textContent = "pelayar tidak menyokong";
+        return;
+      }
+
+      navigator.serviceWorker.register("/sw.js").then((registration) => {
+        swStatusEl.textContent = "aktif";
+
+        if (registration.waiting) {
+          refreshBtn.hidden = false;
+          swStatusEl.textContent = "kemas kini tersedia";
+        }
+
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              refreshBtn.hidden = false;
+              swStatusEl.textContent = "kemas kini sedia";
+            }
+          });
+        });
+
+        setInterval(() => registration.update(), 60000);
+      }).catch((error) => {
+        swStatusEl.textContent = `gagal: ${error.message}`;
+      });
+
+      refreshBtn.addEventListener("click", () => {
+        window.location.reload();
+      });
+
+      logoutBtn.addEventListener("click", () => {
+        if (window.myDisiplinAuth) window.myDisiplinAuth.signOut();
+      });
+    })();
+  </script>
+</body>
+</html>

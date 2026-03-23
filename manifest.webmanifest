@@ -1,0 +1,104 @@
+{
+  "id": "/",
+  "name": "myDisiplin",
+  "short_name": "myDisiplin",
+  "description": "Aplikasi untuk merekod kes disiplin harian di SMK Taman Medan.",
+  "categories": ["productivity", "education", "lifestyle"],
+  "prefer_related_applications": false,
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ecfeff",
+  "theme_color": "#0f766e",
+  "lang": "ms",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Carian Nama Murid",
+      "short_name": "Carian",
+      "description": "Buka terus carian nama murid.",
+      "url": "/#carian-murid",
+      "icons": [
+        {
+          "src": "/icons/icon192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Rekod Kes Baru",
+      "short_name": "Rekod Kes",
+      "description": "Buka borang rekod kes baharu.",
+      "url": "/rekod-kes-baru.html",
+      "icons": [
+        {
+          "src": "/icons/icon192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Senarai Kes",
+      "short_name": "Senarai",
+      "description": "Lihat senarai kes disiplin.",
+      "url": "/senarai-kes.html",
+      "icons": [
+        {
+          "src": "/icons/icon192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home-portrait.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Paparan utama myDisiplin versi potret"
+    },
+    {
+      "src": "/screenshots/home-landscape.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Paparan utama myDisiplin versi landskap"
+    }
+  ],
+  "share_target": {
+    "action": "/kongsi.html",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "display_override": ["window-controls-overlay", "standalone"],
+  "related_applications": []
+}

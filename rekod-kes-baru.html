@@ -1,0 +1,278 @@
+﻿<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <script src="/assets/auth.js"></script>
+  <script>
+    if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
+  </script>
+  <title>myDisiplin - Rekod Kes Baru</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/assets/theme.css" />
+  <style>
+    main { width: min(820px, 100%); }
+    .menu { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .box { padding: 14px; }
+    label { display: block; font-weight: 600; margin: 8px 0 4px; }
+    button { margin-top: 12px; }
+    .status {
+      margin-top: 10px;
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid #b5d8d4;
+      background: #f1fbfa;
+      color: #155e75;
+    }
+
+    @media (max-width: 760px) {
+      .box { padding: 12px; }
+    }
+</style>
+</head>
+<body>
+  <main>
+    <div class="menu">
+      <a href="/#carian-murid">Carian Nama Murid</a>
+      <a href="/rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="/senarai-kes.html">Senarai Kes</a>
+      <a href="/dashbord.html">Dashbord</a>
+    </div>
+    <h1>Rekod Kes Baru</h1>
+    <div class="box">
+      <label for="nama">Nama Murid</label>
+      <input id="nama" type="text" placeholder="Contoh: Ali Bin Abu" />
+      <label for="nokp">No KP</label>
+      <input id="nokp" type="text" placeholder="Contoh: 090101011234" />
+      <label for="kelas">Kelas</label>
+      <select id="kelas">
+        <option value="">-- Sila pilih kelas --</option>
+        <optgroup label="Tingkatan 1">
+          <option>1 AL-FARABI</option>
+          <option>1 AMANAH</option>
+          <option>1 BAKTI</option>
+          <option>1 CEKAL</option>
+          <option>1 DAMAI</option>
+          <option>1 GIGIH</option>
+          <option>1 HORMAT</option>
+          <option>1 IKHLAS</option>
+          <option>1 JUJUR</option>
+        </optgroup>
+        <optgroup label="Tingkatan 2">
+          <option>2 AL-FARABI</option>
+          <option>2 AMANAH</option>
+          <option>2 BAKTI</option>
+          <option>2 CEKAL</option>
+          <option>2 DAMAI</option>
+          <option>2 GIGIH</option>
+          <option>2 HORMAT</option>
+          <option>2 IKHLAS</option>
+          <option>2 JUJUR</option>
+        </optgroup>
+        <optgroup label="Tingkatan 3">
+          <option>3 AL-FARABI</option>
+          <option>3 AMANAH</option>
+          <option>3 BAKTI</option>
+          <option>3 CEKAL</option>
+          <option>3 DAMAI</option>
+          <option>3 GIGIH</option>
+          <option>3 HORMAT</option>
+          <option>3 IKHLAS</option>
+          <option>3 JUJUR</option>
+        </optgroup>
+        <optgroup label="Tingkatan 4">
+          <option>4 AMANAH</option>
+          <option>4 BAKTI</option>
+          <option>4 CEKAL</option>
+          <option>4 DAMAI</option>
+          <option>4 GIGIH</option>
+          <option>4 HORMAT</option>
+          <option>4 IKHLAS</option>
+          <option>4 JUJUR</option>
+          <option>4 PVMA</option>
+        </optgroup>
+        <optgroup label="Tingkatan 5">
+          <option>5 AMANAH</option>
+          <option>5 BAKTI</option>
+          <option>5 CEKAL</option>
+          <option>5 DAMAI</option>
+          <option>5 GIGIH</option>
+          <option>5 HORMAT</option>
+          <option>5 IKHLAS</option>
+          <option>5 JUJUR</option>
+          <option>5 PVMA</option>
+        </optgroup>
+      </select>
+      <label for="tarikh">Tarikh</label>
+      <input id="tarikh" type="date" />
+      <label for="kategori">Jenis Kesalahan</label>
+      <select id="kategori">
+        <option>BARANG LARANGAN</option>
+        <option>DADAH</option>
+        <option>KEKEMASAN DIRI</option>
+        <option>KENAKALAN</option>
+        <option>KESALAHAN ASRAMA</option>
+        <option>KESALAHAN SIBER</option>
+        <option>KES KHAS</option>
+        <option>PENGLIBATAN POLITIK</option>
+        <option>SALAH LAKU BULI</option>
+        <option>SALAH LAKU PONTENG KELAS</option>
+        <option>SALAH LAKU ROKOK</option>
+        <option>SALAH LAKU ROKOK ELEKTRONIK</option>
+        <option>SALAH LAKU TELEFON BIMBIT</option>
+        <option>SALAH LAKU TIDAK AMANAH</option>
+        <option>SEKSUAL</option>
+        <option>TINGKAH LAKU JENAYAH</option>
+        <option>TINGKAH LAKU KURANG SOPAN/BIADAP</option>
+        <option>TINGKAH LAKU LUCAH</option>
+        <option>TINGKAH LAKU TIDAK PENTINGKAN MASA</option>
+        <option>VANDALISME</option>
+      </select>
+      <label for="catatan">Catatan</label>
+      <textarea id="catatan" rows="4" placeholder="Masukkan butiran kes..."></textarea>
+      <button id="simpan-btn" type="button">Simpan Rekod</button>
+      <div id="status" class="status">Sedia untuk simpan rekod.</div>
+    </div>
+  </main>
+  <script>
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+
+    const STORAGE_KEY = "mydisiplin_kes";
+    const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
+    const SHEET_TAB = "Rekod kes baru";
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbz6vNSdvbA4syW5rI4kwn4PwOyZeRC43tofD9XCuCDl_LVFdZaiQarZVHXE2d4l4dnu/exec";
+
+    const namaEl = document.getElementById("nama");
+    const noKpEl = document.getElementById("nokp");
+    const kelasEl = document.getElementById("kelas");
+    const tarikhEl = document.getElementById("tarikh");
+    const kategoriEl = document.getElementById("kategori");
+    const catatanEl = document.getElementById("catatan");
+    const simpanBtn = document.getElementById("simpan-btn");
+    const statusEl = document.getElementById("status");
+    tarikhEl.value = new Date().toISOString().slice(0, 10);
+
+    function normalizeKelas(value) {
+      return String(value || "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+    }
+
+    function applyPrefillFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const nama = (params.get("nama") || "").trim();
+      const noKp = (params.get("nokp") || "").trim();
+      const kelas = (params.get("kelas") || "").trim();
+
+      if (nama) namaEl.value = nama;
+      if (noKp) noKpEl.value = noKp;
+      if (kelas) {
+        const inputKey = normalizeKelas(kelas);
+        const exactMatch = Array.from(kelasEl.options).find((option) => option.value === kelas);
+        const normalizedMatch = Array.from(kelasEl.options).find(
+          (option) => normalizeKelas(option.value) === inputKey
+        );
+        const matchedOption = exactMatch || normalizedMatch;
+        kelasEl.value = matchedOption ? matchedOption.value : "";
+      }
+    }
+
+    applyPrefillFromQuery();
+
+    function formatTarikhMalay(yyyyMmDd) {
+      const parts = yyyyMmDd.split("-");
+      if (parts.length !== 3) return new Date().toLocaleDateString("ms-MY");
+      const year = Number(parts[0]);
+      const month = Number(parts[1]);
+      const day = Number(parts[2]);
+      if (!year || !month || !day) return new Date().toLocaleDateString("ms-MY");
+      return new Date(year, month - 1, day).toLocaleDateString("ms-MY");
+    }
+
+    function getKesList() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveKesList(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    async function sendToGoogleSheet(record) {
+      if (!GAS_ENDPOINT) return false;
+
+      const endpointUrl = new URL(GAS_ENDPOINT);
+      endpointUrl.searchParams.set("sheetId", SHEET_ID);
+      endpointUrl.searchParams.set("tab", SHEET_TAB);
+
+      const payload = {
+        ...record,
+        sheetId: SHEET_ID,
+        tab: SHEET_TAB
+      };
+
+      const response = await fetch(endpointUrl.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      return response.ok;
+    }
+
+    simpanBtn.addEventListener("click", async () => {
+      const nama = namaEl.value.trim();
+      const noKp = noKpEl.value.trim();
+      const kelas = kelasEl.value.trim();
+      const tarikh = tarikhEl.value;
+      const kategori = kategoriEl.value.trim();
+      const catatan = catatanEl.value.trim();
+
+      if (!nama || !noKp || !kelas || !tarikh || !catatan) {
+        statusEl.textContent = "Sila lengkapkan nama, no kp, kelas, tarikh dan catatan.";
+        return;
+      }
+
+      const now = new Date();
+      const record = {
+        id: noKp,
+        tarikh: formatTarikhMalay(tarikh),
+        masa: now.toLocaleTimeString("ms-MY"),
+        nama,
+        noKp,
+        kelas,
+        kategori,
+        catatan,
+        status: "Dalam Semakan"
+      };
+
+      const list = getKesList();
+      list.unshift(record);
+      saveKesList(list);
+
+      let sent = false;
+      try {
+        sent = await sendToGoogleSheet(record);
+      } catch {
+        sent = false;
+      }
+
+      namaEl.value = "";
+      noKpEl.value = "";
+      kelasEl.selectedIndex = 0;
+      tarikhEl.value = new Date().toISOString().slice(0, 10);
+      catatanEl.value = "";
+      kategoriEl.selectedIndex = 0;
+
+      statusEl.textContent = sent
+        ? "Rekod berjaya disimpan dan dihantar ke tab 'Rekod kes baru'."
+        : "Rekod disimpan dalam aplikasi. Untuk hantar ke Google Sheet, isi URL Apps Script pada GAS_ENDPOINT.";
+    });
+  </script>
+</body>
+</html>
+
+

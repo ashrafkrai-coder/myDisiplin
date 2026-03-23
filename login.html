@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>myDisiplin - Sign In</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/assets/theme.css" />
+  <link rel="icon" href="/icons/icon32.png" type="image/png" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 55%, #f8fafc 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #0f172a;
+      padding: 16px;
+    }
+    .login-card {
+      width: min(92vw, 460px);
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #d7e7ee;
+      box-shadow: 0 18px 34px rgba(15, 118, 110, 0.1);
+      padding: 22px;
+    }
+    .title {
+      margin: 0 0 6px;
+      color: #0f766e;
+      font-size: 1.5rem;
+    }
+    .muted {
+      margin: 0 0 14px;
+      color: #475569;
+      line-height: 1.5;
+    }
+    .status {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #d5e8e6;
+      background: #f4fbfa;
+      color: #0f766e;
+    }
+    .first-user-info {
+      margin: 0 0 10px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #d9e8f7;
+      background: #f8fbff;
+      color: #1e3a8a;
+      line-height: 1.4;
+      font-size: 14px;
+    }
+    .logo {
+      width: 58px;
+      height: 58px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .action-row button {
+      width: 100%;
+    }
+    @media (max-width: 560px) {
+      .action-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="login-card">
+    <img class="logo" src="https://i.ibb.co/hJXVWgcN/logo-sekolah.png?v=20260323b" alt="Logo SMK Taman Medan" />
+    <h1 class="title">Log Masuk myDisiplin</h1>
+    <p class="muted">Untuk pengguna pertama sila daftar dahulu. Jika sudah daftar sila login.</p>
+    <p id="first-user-info" class="first-user-info">Menyemak status pengguna pertama...</p>
+    <div class="action-row">
+      <button id="signup-google-btn" type="button">Daftar Pengguna Pertama</button>
+      <button id="signin-google-btn" type="button">Login Google</button>
+    </div>
+    <p class="muted" style="margin-top:10px">Login akan disimpan pada peranti ini untuk akses lebih cepat.</p>
+    <div id="login-status" class="status">Menyediakan Firebase Sign-In...</div>
+  </section>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="/assets/auth.js"></script>
+  <script>
+    window.addEventListener("load", function () {
+      if (window.myDisiplinAuth) window.myDisiplinAuth.initLoginPage();
+    });
+  </script>
+</body>
+</html>

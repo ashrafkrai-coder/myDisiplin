@@ -1,0 +1,371 @@
+﻿<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <script src="/assets/auth.js"></script>
+  <script>
+    if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
+  </script>
+  <title>myDisiplin - Senarai Kes</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/assets/theme.css" />
+  <style>
+    main { width: min(1140px, 100%); }
+    .menu { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .toolbar { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto auto; gap: 10px; margin-bottom: 12px; }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; background: #ffffff; }
+    th, td { padding: 10px; border-bottom: 1px solid #e6edf3; text-align: left; vertical-align: top; }
+    th { background: #eef4f8; color: #1e293b; position: sticky; top: 0; z-index: 1; }
+    tbody tr:nth-child(even) { background: #fbfdff; }
+    .empty { margin: 0; border-radius: 12px; border: 1px dashed #c9d8e3; background: #f9fbfd; color: #475569; padding: 12px; }
+    .status-wrap { display: flex; align-items: center; gap: 8px; }
+    .status-wrap {
+      justify-content: flex-start;
+      background: #f8fafc;
+      border: 1px solid #deebf2;
+      border-radius: 10px;
+      padding: 6px 8px;
+      width: fit-content;
+    }
+
+    .status-toggle {
+      accent-color: #0f766e;
+      transform: scale(1.08);
+    }
+    .status-label { font-weight: 600; }
+
+    @media (max-width: 760px) {
+      .toolbar { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+  <main>
+    <div class="menu">
+      <a href="/#carian-murid">Carian Nama Murid</a>
+      <a href="/rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="/senarai-kes.html">Senarai Kes</a>
+      <a href="/dashbord.html">Dashbord</a>
+    </div>
+    <h1>Senarai Kes</h1>
+    <div class="toolbar no-print">
+      <input id="filter-nama" type="text" placeholder="Tapis nama murid" />
+      <select id="filter-kategori">
+        <option value="">Semua kategori</option>
+      </select>
+      <select id="filter-status">
+        <option value="">Semua status</option>
+        <option value="Dalam Semakan">Dalam Semakan</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+      <input id="filter-tarikh-mula" type="date" title="Tarikh dari" />
+      <input id="filter-tarikh-akhir" type="date" title="Tarikh hingga" />
+      <button id="btn-reset" type="button" class="secondary">Reset</button>
+      <button id="btn-print" type="button">Cetak / Simpan PDF</button>
+    </div>
+    <div id="list-container" class="table-wrap"></div>
+  </main>
+  <script>
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+
+    const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
+    const SHEET_TAB = "Rekod kes baru";
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbz6vNSdvbA4syW5rI4kwn4PwOyZeRC43tofD9XCuCDl_LVFdZaiQarZVHXE2d4l4dnu/exec";
+    const container = document.getElementById("list-container");
+    const filterNamaEl = document.getElementById("filter-nama");
+    const filterKategoriEl = document.getElementById("filter-kategori");
+    const filterStatusEl = document.getElementById("filter-status");
+    const filterTarikhMulaEl = document.getElementById("filter-tarikh-mula");
+    const filterTarikhAkhirEl = document.getElementById("filter-tarikh-akhir");
+    const btnResetEl = document.getElementById("btn-reset");
+    const btnPrintEl = document.getElementById("btn-print");
+    let latestRows = [];
+
+    function normalizeKey(value) {
+      return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function findColumnIndex(headers, aliases) {
+      return headers.findIndex((header) => aliases.includes(normalizeKey(header)));
+    }
+
+    function formatTarikhDisplay(value) {
+      const raw = String(value == null ? "" : value).trim();
+      if (!raw) return "-";
+
+      const gviz = raw.match(/^Date\((\d{4}),\s*(\d{1,2}),\s*(\d{1,2})/i);
+      if (gviz) {
+        const year = Number(gviz[1]);
+        const month = Number(gviz[2]) + 1;
+        const day = Number(gviz[3]);
+        const dd = String(day).padStart(2, "0");
+        const mm = String(month).padStart(2, "0");
+        return `${dd}/${mm}/${year}`;
+      }
+
+      const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (iso) {
+        const year = Number(iso[1]);
+        const month = Number(iso[2]);
+        const day = Number(iso[3]);
+        const dd = String(day).padStart(2, "0");
+        const mm = String(month).padStart(2, "0");
+        return `${dd}/${mm}/${year}`;
+      }
+
+      const malay = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (malay) {
+        const dd = String(Number(malay[1])).padStart(2, "0");
+        const mm = String(Number(malay[2])).padStart(2, "0");
+        const yyyy = malay[3];
+        return `${dd}/${mm}/${yyyy}`;
+      }
+
+      const native = new Date(raw);
+      if (!Number.isNaN(native.getTime())) {
+        const dd = String(native.getDate()).padStart(2, "0");
+        const mm = String(native.getMonth() + 1).padStart(2, "0");
+        const yyyy = native.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+      }
+
+      return raw.replace(/^Date/i, "").trim() || "-";
+    }
+
+    function parseTarikhToDate(value) {
+      const raw = String(value == null ? "" : value).trim();
+      if (!raw) return null;
+
+      const gviz = raw.match(/^Date\((\d{4}),\s*(\d{1,2}),\s*(\d{1,2})/i);
+      if (gviz) {
+        return new Date(Number(gviz[1]), Number(gviz[2]), Number(gviz[3]));
+      }
+
+      const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (iso) {
+        return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+      }
+
+      const malay = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (malay) {
+        return new Date(Number(malay[3]), Number(malay[2]) - 1, Number(malay[1]));
+      }
+
+      const native = new Date(raw);
+      if (Number.isNaN(native.getTime())) return null;
+      return new Date(native.getFullYear(), native.getMonth(), native.getDate());
+    }
+
+    function renderTable(rows) {
+      if (!rows.length) {
+        container.innerHTML = "<div class='empty'>Tiada rekod kes dalam tab Rekod kes baru.</div>";
+        return;
+      }
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Tarikh</th>
+              <th>Masa</th>
+              <th>Nama Murid</th>
+              <th>No KP</th>
+              <th>Kelas</th>
+              <th>Kategori</th>
+              <th>Catatan</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((item) => `
+              <tr>
+                <td>${formatTarikhDisplay(item.tarikh)}</td>
+                <td>${item.masa || "-"}</td>
+                <td>${item.nama || "-"}</td>
+                <td>${item.noKp || "-"}</td>
+                <td>${item.kelas || "-"}</td>
+                <td>${item.kategori || "-"}</td>
+                <td class="muted">${item.catatan || "-"}</td>
+                <td>
+                  <div class="status-wrap">
+                    <input
+                      type="checkbox"
+                      class="status-toggle"
+                      data-row="${item.rowNumber}"
+                      ${String(item.status || "").trim().toLowerCase() === "selesai" ? "checked" : ""}
+                    />
+                    <span class="status-label">${item.status || "Dalam Semakan"}</span>
+                  </div>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function getFilteredRows() {
+      const namaQuery = filterNamaEl.value.trim().toLowerCase();
+      const kategoriQuery = filterKategoriEl.value.trim().toLowerCase();
+      const statusQuery = filterStatusEl.value.trim().toLowerCase();
+      const tarikhMulaRaw = filterTarikhMulaEl.value;
+      const tarikhAkhirRaw = filterTarikhAkhirEl.value;
+      const tarikhMula = tarikhMulaRaw ? new Date(`${tarikhMulaRaw}T00:00:00`) : null;
+      const tarikhAkhir = tarikhAkhirRaw ? new Date(`${tarikhAkhirRaw}T23:59:59`) : null;
+
+      return latestRows.filter((item) => {
+        const matchNama = !namaQuery || String(item.nama || "").toLowerCase().includes(namaQuery);
+        const matchKategori = !kategoriQuery || String(item.kategori || "").toLowerCase().includes(kategoriQuery);
+        const matchStatus = !statusQuery || String(item.status || "").toLowerCase() === statusQuery;
+        const tarikhRekod = parseTarikhToDate(item.tarikh);
+        const matchTarikhMula = !tarikhMula || (tarikhRekod && tarikhRekod >= tarikhMula);
+        const matchTarikhAkhir = !tarikhAkhir || (tarikhRekod && tarikhRekod <= tarikhAkhir);
+        return matchNama && matchKategori && matchStatus && matchTarikhMula && matchTarikhAkhir;
+      });
+    }
+
+    function populateKategoriOptions(rows) {
+      const current = filterKategoriEl.value;
+      const categories = Array.from(
+        new Set(
+          rows
+            .map((item) => String(item.kategori || "").trim())
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, "ms"));
+
+      filterKategoriEl.innerHTML =
+        `<option value="">Semua kategori</option>` +
+        categories.map((category) => `<option value="${category}">${category}</option>`).join("");
+
+      if (current && categories.includes(current)) {
+        filterKategoriEl.value = current;
+      }
+    }
+
+    function applyFilters() {
+      renderTable(getFilteredRows());
+    }
+
+    async function updateStatusInSheet(rowNumber, status) {
+      if (!GAS_ENDPOINT) return false;
+      const endpointUrl = new URL(GAS_ENDPOINT);
+      endpointUrl.searchParams.set("sheetId", SHEET_ID);
+      endpointUrl.searchParams.set("tab", SHEET_TAB);
+
+      const payload = {
+        action: "update_status",
+        sheetId: SHEET_ID,
+        tab: SHEET_TAB,
+        rowNumber,
+        status
+      };
+
+      const response = await fetch(endpointUrl.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      return response.ok;
+    }
+
+    async function loadKesFromSheet() {
+      container.innerHTML = "<div class='empty'>Memuat rekod kes dari Google Sheet...</div>";
+
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_TAB)}&tqx=out:json`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Gagal akses tab Rekod kes baru");
+        const text = await response.text();
+        const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+        const parsed = JSON.parse(jsonText);
+        const rows = parsed.table.rows || [];
+        const headers = (parsed.table.cols || []).map((col) => col.label || col.id || "");
+
+        const idCol = findColumnIndex(headers, ["id"]);
+        const noKpCol = findColumnIndex(headers, ["nokp", "nokadpengenalan", "nokad", "no_kp"]);
+        const tarikhCol = findColumnIndex(headers, ["tarikh", "date"]);
+        const masaCol = findColumnIndex(headers, ["masa", "time"]);
+        const namaCol = findColumnIndex(headers, ["nama", "namamurid", "murid", "namapelajar"]);
+        const kelasCol = findColumnIndex(headers, ["kelas", "class", "tingkatan"]);
+        const kategoriCol = findColumnIndex(headers, ["kategori", "jeniskesalahan", "jenis"]);
+        const catatanCol = findColumnIndex(headers, ["catatan", "keterangan", "butiran"]);
+        const statusCol = findColumnIndex(headers, ["status"]);
+
+        latestRows = rows
+          .map((row, index) => {
+            const cells = (row.c || []).map((cell) => (cell && cell.v != null ? String(cell.v) : ""));
+            return {
+              rowNumber: index + 2,
+              id: idCol >= 0 ? cells[idCol] || "" : "",
+              noKp: noKpCol >= 0 ? cells[noKpCol] || "" : "",
+              tarikh: tarikhCol >= 0 ? cells[tarikhCol] || "" : "",
+              masa: masaCol >= 0 ? cells[masaCol] || "" : "",
+              nama: namaCol >= 0 ? cells[namaCol] || "" : "",
+              kelas: kelasCol >= 0 ? cells[kelasCol] || "" : "",
+              kategori: kategoriCol >= 0 ? cells[kategoriCol] || "" : "",
+              catatan: catatanCol >= 0 ? cells[catatanCol] || "" : "",
+              status: statusCol >= 0 ? cells[statusCol] || "" : "Dalam Semakan"
+            };
+          })
+          .filter((item) => item.nama || item.noKp || item.kategori || item.catatan);
+
+        populateKategoriOptions(latestRows);
+        applyFilters();
+      } catch {
+        container.innerHTML = "<div class='empty'>Gagal memuat rekod kes dari Google Sheet.</div>";
+      }
+    }
+
+    container.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (!target.classList.contains("status-toggle")) return;
+
+      const rowNumber = Number(target.dataset.row);
+      if (!Number.isInteger(rowNumber) || rowNumber < 2) return;
+      const newStatus = target.checked ? "Selesai" : "Dalam Semakan";
+      target.disabled = true;
+
+      updateStatusInSheet(rowNumber, newStatus)
+        .then((ok) => {
+          if (!ok) throw new Error("Gagal kemas kini status");
+          latestRows = latestRows.map((item) =>
+            item.rowNumber === rowNumber ? { ...item, status: newStatus } : item
+          );
+          applyFilters();
+        })
+        .catch(() => {
+          target.checked = !target.checked;
+          target.disabled = false;
+          container.insertAdjacentHTML(
+            "afterbegin",
+            "<div class='empty'>Status gagal dikemas kini ke Google Sheet.</div>"
+          );
+        });
+    });
+
+    filterNamaEl.addEventListener("input", applyFilters);
+    filterKategoriEl.addEventListener("input", applyFilters);
+    filterStatusEl.addEventListener("change", applyFilters);
+    filterTarikhMulaEl.addEventListener("change", applyFilters);
+    filterTarikhAkhirEl.addEventListener("change", applyFilters);
+    btnResetEl.addEventListener("click", () => {
+      filterNamaEl.value = "";
+      filterKategoriEl.value = "";
+      filterStatusEl.selectedIndex = 0;
+      filterTarikhMulaEl.value = "";
+      filterTarikhAkhirEl.value = "";
+      applyFilters();
+    });
+    btnPrintEl.addEventListener("click", () => window.print());
+
+    loadKesFromSheet();
+  </script>
+</body>
+</html>
+
+

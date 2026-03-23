@@ -1,0 +1,205 @@
+﻿<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <script src="/assets/auth.js"></script>
+  <script>
+    if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
+  </script>
+  <title>myDisiplin - Dashbord</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/assets/theme.css" />
+  <style>
+    main { width: min(980px, 100%); }
+    .menu { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .card { padding: 14px; }
+    .value { font-size: 28px; font-weight: 700; color: #0f766e; margin: 6px 0 0; }
+    .grid { gap: 14px; }
+
+    .card > div:first-child {
+      color: #334155;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .value {
+      font-size: clamp(1.7rem, 3vw, 2.2rem);
+      color: var(--primary);
+    }
+
+    .hint {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #dce7ef;
+      background: #f9fbfd;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .grid { gap: 10px; }
+    }
+</style>
+</head>
+<body>
+  <main>
+    <div class="menu">
+      <a href="/#carian-murid">Carian Nama Murid</a>
+      <a href="/rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="/senarai-kes.html">Senarai Kes</a>
+      <a href="/dashbord.html">Dashbord</a>
+    </div>
+    <h1>Dashbord</h1>
+    <div class="grid">
+      <div class="card"><div>Jumlah Murid</div><div id="jumlah-murid" class="value">0</div></div>
+      <div class="card"><div>Kes Bulan Ini</div><div id="kes-bulan-ini" class="value">0</div></div>
+      <div class="card"><div>Kes Selesai</div><div id="kes-selesai" class="value">0</div></div>
+      <div class="card"><div>Kes Dalam Semakan</div><div id="kes-semakan" class="value">0</div></div>
+    </div>
+    <div id="kemaskini" class="hint">Data dikemas kini secara automatik.</div>
+  </main>
+  <script>
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+
+    const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
+    const STUDENT_TAB = "data";
+    const CASE_TAB = "Rekod kes baru";
+    const jumlahMuridEl = document.getElementById("jumlah-murid");
+    const kesBulanIniEl = document.getElementById("kes-bulan-ini");
+    const kesSelesaiEl = document.getElementById("kes-selesai");
+    const kesSemakanEl = document.getElementById("kes-semakan");
+    const kemaskiniEl = document.getElementById("kemaskini");
+
+    function normalizeKey(value) {
+      return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function findColumnIndex(headers, aliases) {
+      return headers.findIndex((header) => aliases.includes(normalizeKey(header)));
+    }
+
+    async function fetchSheetRows(tabName) {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tabName)}&tqx=out:json`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Gagal akses tab ${tabName}`);
+      const text = await response.text();
+      const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+      const parsed = JSON.parse(jsonText);
+      return {
+        rows: parsed.table.rows || [],
+        headers: (parsed.table.cols || []).map((col) => col.label || col.id || "")
+      };
+    }
+
+    function parseDateValue(value) {
+      if (value == null) return null;
+      const raw = String(value).trim();
+      if (!raw) return null;
+
+      const gvizMatch = raw.match(/^Date\((\d{4}),\s*(\d{1,2}),\s*(\d{1,2})/i);
+      if (gvizMatch) {
+        const year = Number(gvizMatch[1]);
+        const monthZero = Number(gvizMatch[2]);
+        const day = Number(gvizMatch[3]);
+        return new Date(year, monthZero, day);
+      }
+
+      const malay = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (malay) {
+        const day = Number(malay[1]);
+        const month = Number(malay[2]);
+        const year = Number(malay[3]);
+        return new Date(year, month - 1, day);
+      }
+
+      const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (iso) {
+        const year = Number(iso[1]);
+        const month = Number(iso[2]);
+        const day = Number(iso[3]);
+        return new Date(year, month - 1, day);
+      }
+
+      const native = new Date(raw);
+      return Number.isNaN(native.getTime()) ? null : native;
+    }
+
+    function updateDashboard(totalMurid, rows) {
+      const now = new Date();
+      const bulan = now.getMonth();
+      const tahun = now.getFullYear();
+
+      const kesBulanIni = rows.filter((item) => {
+        const tarikh = parseDateValue(item.tarikh);
+        if (!tarikh) return false;
+        return tarikh.getMonth() === bulan && tarikh.getFullYear() === tahun;
+      }).length;
+
+      const kesSelesai = rows.filter((item) =>
+        String(item.status || "").trim().toLowerCase() === "selesai"
+      ).length;
+
+      const kesSemakan = rows.filter((item) =>
+        String(item.status || "").trim().toLowerCase() === "dalam semakan"
+      ).length;
+
+      jumlahMuridEl.textContent = String(totalMurid);
+      kesBulanIniEl.textContent = String(kesBulanIni);
+      kesSelesaiEl.textContent = String(kesSelesai);
+      kesSemakanEl.textContent = String(kesSemakan);
+      kemaskiniEl.textContent = `Data terakhir dikemas kini: ${now.toLocaleString("ms-MY")}`;
+    }
+
+    async function loadDashboardFromSheet() {
+      kemaskiniEl.textContent = "Memuat data dashboard dari Google Sheet...";
+
+      try {
+        const [studentData, caseData] = await Promise.all([
+          fetchSheetRows(STUDENT_TAB),
+          fetchSheetRows(CASE_TAB)
+        ]);
+
+        // Jumlah murid diambil terus daripada bilangan nilai tidak kosong pada kolum A tab "data".
+        const totalMurid = studentData.rows
+          .map((row) => {
+            const firstCell = row && row.c && row.c[0] ? row.c[0].v : "";
+            return String(firstCell == null ? "" : firstCell).trim();
+          })
+          .filter(Boolean).length;
+
+        const tarikhCol = findColumnIndex(caseData.headers, ["tarikh", "date"]);
+        const namaCol = findColumnIndex(caseData.headers, ["nama", "namamurid", "murid"]);
+        const statusCol = findColumnIndex(caseData.headers, ["status"]);
+
+        const records = caseData.rows
+          .map((row) => (row.c || []).map((cell) => (cell && cell.v != null ? String(cell.v) : "")))
+          .map((cells) => ({
+            tarikh: tarikhCol >= 0 ? cells[tarikhCol] || "" : "",
+            nama: namaCol >= 0 ? cells[namaCol] || "" : "",
+            status: statusCol >= 0 ? cells[statusCol] || "" : ""
+          }))
+          .filter((item) => item.tarikh || item.nama || item.status);
+
+        updateDashboard(totalMurid, records);
+      } catch (error) {
+        jumlahMuridEl.textContent = "0";
+        kesBulanIniEl.textContent = "0";
+        kesSelesaiEl.textContent = "0";
+        kesSemakanEl.textContent = "0";
+        kemaskiniEl.textContent = "Gagal memuat data dari Google Sheet.";
+      }
+    }
+
+    loadDashboardFromSheet();
+    window.addEventListener("focus", loadDashboardFromSheet);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) loadDashboardFromSheet();
+    });
+  </script>
+</body>
+</html>
+
