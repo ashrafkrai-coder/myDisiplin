@@ -35,11 +35,9 @@
 
   function signIn(provider) {
     const now = new Date().toISOString();
-    const existing = readState() || {};
     writeState({
       authenticated: true,
-      provider: provider || existing.provider || "local",
-      firstLoginAt: existing.firstLoginAt || now,
+      provider: provider || "password",
       lastLoginAt: now
     });
   }
@@ -59,26 +57,15 @@
   }
 
   function initLoginPage() {
-    const signupBtn = document.getElementById("signup-google-btn");
-    const signinBtn = document.getElementById("signin-google-btn");
+    const signinBtn = document.getElementById("signin-btn");
     const passwordEl = document.getElementById("shared-password");
     const statusEl = document.getElementById("login-status");
-    const firstUserEl = document.getElementById("first-user-info");
-
-    const state = readState();
-    if (firstUserEl) {
-      if (state && state.firstLoginAt) {
-        firstUserEl.textContent = "Pengguna pertama telah didaftarkan pada peranti ini.";
-      } else {
-        firstUserEl.textContent = "Belum ada pengguna didaftarkan pada peranti ini. Gunakan butang daftar dahulu.";
-      }
-    }
 
     if (statusEl) {
-      statusEl.textContent = "Sedia. Masukkan kata laluan, kemudian pilih daftar atau login.";
+      statusEl.textContent = "Sedia. Masukkan kata laluan untuk login.";
     }
 
-    async function handleAuth(provider, successMessage) {
+    async function handleAuth() {
       if (!passwordEl) return;
       const password = String(passwordEl.value || "").trim();
       if (!password) {
@@ -95,22 +82,16 @@
         return;
       }
 
-      signIn(provider);
-      if (statusEl) statusEl.textContent = successMessage;
+      signIn("password");
+      if (statusEl) statusEl.textContent = "Login berjaya. Mengalihkan ke halaman utama...";
       setTimeout(function () {
         location.href = "index.html";
       }, 300);
     }
 
-    if (signupBtn) {
-      signupBtn.addEventListener("click", function () {
-        handleAuth("google-signup", "Daftar berjaya. Mengalihkan ke halaman utama...");
-      });
-    }
-
     if (signinBtn) {
       signinBtn.addEventListener("click", function () {
-        handleAuth("google-signin", "Login berjaya. Mengalihkan ke halaman utama...");
+        handleAuth();
       });
     }
 
@@ -118,7 +99,7 @@
       passwordEl.addEventListener("keydown", function (event) {
         if (event.key === "Enter") {
           event.preventDefault();
-          handleAuth("google-signin", "Login berjaya. Mengalihkan ke halaman utama...");
+          handleAuth();
         }
       });
     }

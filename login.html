@@ -45,16 +45,6 @@
       background: #f4fbfa;
       color: #0f766e;
     }
-    .first-user-info {
-      margin: 0 0 10px;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #d9e8f7;
-      background: #f8fbff;
-      color: #1e3a8a;
-      line-height: 1.4;
-      font-size: 14px;
-    }
     .logo {
       width: 58px;
       height: 58px;
@@ -63,7 +53,7 @@
     }
     .action-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 8px;
     }
     .password-wrap {
@@ -96,23 +86,18 @@
   <section class="login-card">
     <img class="logo" src="https://i.ibb.co/hJXVWgcN/logo-sekolah.png?v=20260323b" alt="Logo SMK Taman Medan" />
     <h1 class="title">Log Masuk myDisiplin</h1>
-    <p class="muted">Untuk pengguna pertama sila daftar dahulu. Jika sudah daftar sila login.</p>
-    <p id="first-user-info" class="first-user-info">Menyemak status pengguna pertama...</p>
+    <p class="muted">Akses sistem menggunakan kata laluan sahaja.</p>
     <div class="password-wrap">
       <label for="shared-password">Kata Laluan Akses</label>
       <input id="shared-password" type="password" autocomplete="current-password" placeholder="Masukkan kata laluan" />
     </div>
     <div class="action-row">
-      <button id="signup-google-btn" type="button">Daftar Pengguna Pertama</button>
-      <button id="signin-google-btn" type="button">Login Google</button>
+      <button id="signin-btn" type="button">Login</button>
     </div>
     <p class="muted" style="margin-top:10px">Login akan disimpan pada peranti ini selepas kata laluan disahkan.</p>
-    <div id="login-status" class="status">Menyediakan Firebase Sign-In...</div>
+    <div id="login-status" class="status">Sedia untuk pengesahan kata laluan.</div>
   </section>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <script src="assets/auth.js"></script>
   <script>
     window.addEventListener("load", function () {
