@@ -1,4 +1,4 @@
-const APP_VERSION = "v29";
+const APP_VERSION = "v30";
 const STATIC_CACHE = `mydisiplin-static-${APP_VERSION}`;
 const RUNTIME_CACHE = `mydisiplin-runtime-${APP_VERSION}`;
 const STATIC_ASSETS = [
@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
   "icons/icon32.png",
   "icons/icon192.png",
   "icons/icon512.png",
+  "icons/icon512-maskable.png",
   "screenshots/home-portrait.png",
   "screenshots/home-landscape.png"
 ];
