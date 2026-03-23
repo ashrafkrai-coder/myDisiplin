@@ -1,7 +1,7 @@
 ﻿(function () {
   const KEY = "mydisiplin_auth_state";
   const PASSWORD_PLAIN = "BEA8613";
-  // Default shared password hash (SHA-256 for: BEA8613).
+  // Default shared access code hash (SHA-256 for: BEA8613).
   const PASSWORD_HASH = "d72847a42d401b7509a7878ea51ee524f40644c06a84fe1f4ad679c298100f8d";
 
   async function sha256Hex(value) {
@@ -50,7 +50,7 @@
     const now = new Date().toISOString();
     writeState({
       authenticated: true,
-      provider: provider || "password",
+      provider: provider || "access-code",
       lastLoginAt: now
     });
   }
@@ -75,27 +75,27 @@
     const statusEl = document.getElementById("login-status");
 
     if (statusEl) {
-      statusEl.textContent = "Sedia. Masukkan kata laluan untuk login.";
+      statusEl.textContent = "Sedia. Masukkan kod akses untuk login.";
     }
 
     async function handleAuth() {
       if (!passwordEl) return;
       const password = String(passwordEl.value || "").trim();
       if (!password) {
-        if (statusEl) statusEl.textContent = "Masukkan kata laluan dahulu.";
+        if (statusEl) statusEl.textContent = "Masukkan kod akses dahulu.";
         passwordEl.focus();
         return;
       }
 
       const ok = await verifyPassword(password);
       if (!ok) {
-        if (statusEl) statusEl.textContent = "Kata laluan tidak sah. Sila cuba lagi.";
+        if (statusEl) statusEl.textContent = "Kod akses tidak sah. Sila cuba lagi.";
         passwordEl.focus();
         passwordEl.select();
         return;
       }
 
-      signIn("password");
+      signIn("access-code");
       if (statusEl) statusEl.textContent = "Login berjaya. Mengalihkan ke halaman utama...";
       setTimeout(function () {
         location.href = "index.html";
