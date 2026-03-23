@@ -1,5 +1,6 @@
 ﻿(function () {
   const KEY = "mydisiplin_auth_state";
+  const PASSWORD_PLAIN = "BEA8613";
   // Default shared password hash (SHA-256 for: BEA8613).
   const PASSWORD_HASH = "d72847a42d401b7509a7878ea51ee524f40644c06a84fe1f4ad679c298100f8d";
 
@@ -12,8 +13,20 @@
   }
 
   async function verifyPassword(password) {
-    const hash = await sha256Hex(password);
-    return hash === PASSWORD_HASH;
+    const value = String(password || "").trim();
+    if (!value) return false;
+
+    // Fallback for non-secure contexts where crypto.subtle is unavailable.
+    if (!window.crypto || !window.crypto.subtle) {
+      return value === PASSWORD_PLAIN;
+    }
+
+    try {
+      const hash = await sha256Hex(value);
+      return hash === PASSWORD_HASH;
+    } catch {
+      return value === PASSWORD_PLAIN;
+    }
   }
 
   function readState() {
