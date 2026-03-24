@@ -78,7 +78,7 @@ button.secondary {
 #search-output,
 #list-container {
   background: #ffffff;
-  border: 1px solid #d8e8e5;
+  border: 2px solid #c3ded9;
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(15, 118, 110, 0.06);
 }

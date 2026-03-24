@@ -30,7 +30,7 @@
       padding: 12px 14px;
       border-radius: 16px;
       background: linear-gradient(135deg, #f8fffe 0%, #ecfeff 55%, #f0fdfa 100%);
-      border: 1px solid #d9eeea;
+      border: 2px solid #c3ded9;
       box-shadow: 0 10px 24px rgba(15, 118, 110, 0.08);
       margin-bottom: 12px;
     }
@@ -150,7 +150,7 @@
     <div class="hero">
       <img
         class="hero-logo"
-        src="icons/icon192.png"
+        src="icons/logo-sekolah.png"
         alt="Logo myDisiplin"
       />
       <div class="hero-text">
@@ -181,8 +181,6 @@
       <button id="logout-btn" class="secondary">Log Keluar</button>
       <button id="refresh-btn" class="secondary" hidden>Muat Ulang Update</button>
     </div>
-    <p>Status service worker: <code id="sw-status">menyemak...</code></p>
-    <p>Status pemasangan: <code id="install-status">belum tersedia</code></p>
   </main>
 
   <script>
@@ -197,8 +195,14 @@
       const studentNoKpInput = document.getElementById("student-nokp");
       const studentClassInput = document.getElementById("student-class");
       const searchOutput = document.getElementById("search-output");
+      const setInstallStatus = (message) => {
+        if (installStatusEl) installStatusEl.textContent = message;
+      };
+      const setSwStatus = (message) => {
+        if (swStatusEl) swStatusEl.textContent = message;
+      };
       let deferredPrompt;
-      installStatusEl.textContent = "tekan butang Install Aplikasi";
+      setInstallStatus("tekan butang Install Aplikasi");
       const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
       const SHEET_TAB = "data";
       const CASES_TAB = "Rekod kes baru";
@@ -401,7 +405,7 @@
       window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         deferredPrompt = event;
-        installStatusEl.textContent = "sedia dipasang";
+        setInstallStatus("sedia dipasang");
       });
 
       installBtn.addEventListener("click", async () => {
@@ -410,37 +414,37 @@
           const isIOS = /iPad|iPhone|iPod/i.test(ua);
           const isAndroid = /Android/i.test(ua);
           if (isIOS) {
-            installStatusEl.textContent = "iPhone/iPad: guna Share > Add to Home Screen.";
+            setInstallStatus("iPhone/iPad: guna Share > Add to Home Screen.");
           } else if (isAndroid) {
-            installStatusEl.textContent = "Android: buka menu browser (⋮) > Install app / Add to Home screen.";
+            setInstallStatus("Android: buka menu browser (⋮) > Install app / Add to Home screen.");
           } else {
-            installStatusEl.textContent = "Jika tiada pop-up, buka menu browser dan pilih Install app.";
+            setInstallStatus("Jika tiada pop-up, buka menu browser dan pilih Install app.");
           }
           return;
         }
         deferredPrompt.prompt();
         await deferredPrompt.userChoice;
         deferredPrompt = null;
-        installStatusEl.textContent = "prompt sudah dipaparkan";
+        setInstallStatus("prompt sudah dipaparkan");
       });
 
       window.addEventListener("appinstalled", () => {
         installBtn.disabled = true;
         installBtn.textContent = "Aplikasi Dipasang";
-        installStatusEl.textContent = "sudah dipasang";
+        setInstallStatus("sudah dipasang");
       });
 
       if (!("serviceWorker" in navigator)) {
-        swStatusEl.textContent = "pelayar tidak menyokong";
+        setSwStatus("pelayar tidak menyokong");
         return;
       }
 
       navigator.serviceWorker.register("sw.js").then((registration) => {
-        swStatusEl.textContent = "aktif";
+        setSwStatus("aktif");
 
         if (registration.waiting) {
           refreshBtn.hidden = false;
-          swStatusEl.textContent = "kemas kini tersedia";
+          setSwStatus("kemas kini tersedia");
         }
 
         registration.addEventListener("updatefound", () => {
@@ -450,14 +454,14 @@
           newWorker.addEventListener("statechange", () => {
             if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
               refreshBtn.hidden = false;
-              swStatusEl.textContent = "kemas kini sedia";
+              setSwStatus("kemas kini sedia");
             }
           });
         });
 
         setInterval(() => registration.update(), 60000);
       }).catch((error) => {
-        swStatusEl.textContent = `gagal: ${error.message}`;
+        setSwStatus(`gagal: ${error.message}`);
       });
 
       refreshBtn.addEventListener("click", () => {
@@ -471,5 +475,7 @@
   </script>
 </body>
 </html>
+
+
 
 
