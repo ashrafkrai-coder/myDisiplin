@@ -261,7 +261,7 @@
     }
 
     async function sendToGoogleSheet(record) {
-      if (!GAS_ENDPOINT) return false;
+      if (!GAS_ENDPOINT) return { ok: false, error: "GAS_ENDPOINT belum diisi." };
 
       const endpointUrl = new URL(GAS_ENDPOINT);
       endpointUrl.searchParams.set("sheetId", SHEET_ID);
@@ -273,12 +273,35 @@
         tab: SHEET_TAB
       };
 
-      const response = await fetch(endpointUrl.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      return response.ok;
+      try {
+        const response = await fetch(endpointUrl.toString(), {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          let bodyText = "";
+          try {
+            bodyText = (await response.text()).trim();
+          } catch {
+            bodyText = "";
+          }
+          return {
+            ok: false,
+            error: bodyText
+              ? `HTTP ${response.status} ${response.statusText}: ${bodyText}`
+              : `HTTP ${response.status} ${response.statusText}`
+          };
+        }
+
+        return { ok: true, error: "" };
+      } catch (error) {
+        return {
+          ok: false,
+          error: error && error.message ? error.message : "Ralat rangkaian/CORS semasa hantar ke endpoint."
+        };
+      }
     }
 
     simpanBtn.addEventListener("click", async () => {
@@ -321,12 +344,8 @@
       saveKesList(list);
 
       setProgress(60, "Menghantar ke Google Sheet... 60%");
-      let sent = false;
-      try {
-        sent = await sendToGoogleSheet(record);
-      } catch {
-        sent = false;
-      }
+      const syncResult = await sendToGoogleSheet(record);
+      const sent = syncResult.ok;
 
       setProgress(90, "Memuktamadkan simpanan... 90%");
       namaEl.value = "";
@@ -340,7 +359,9 @@
       setProgress(100, "Selesai memproses rekod... 100%");
       statusEl.textContent = sent
         ? "Rekod berjaya disimpan dan dihantar ke tab 'Rekod kes baru'."
-        : "Rekod disimpan dalam aplikasi. Untuk hantar ke Google Sheet, isi URL Apps Script pada GAS_ENDPOINT.";
+        : GAS_ENDPOINT
+          ? `Rekod disimpan dalam aplikasi, tetapi penghantaran ke Google Sheet gagal. Sebab: ${syncResult.error || "Tidak diketahui"}. Semak deploy Web App, akses kebenaran, dan URL endpoint.`
+          : "Rekod disimpan dalam aplikasi. Sila isi URL Apps Script pada GAS_ENDPOINT untuk hantar ke Google Sheet.";
 
       setTimeout(() => {
         resetProgress();
