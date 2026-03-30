@@ -25,6 +25,32 @@
       background: #f1fbfa;
       color: #155e75;
     }
+    .progress-wrap {
+      margin-top: 10px;
+      display: none;
+      gap: 8px;
+      align-items: center;
+    }
+    .progress-track {
+      flex: 1;
+      height: 10px;
+      border-radius: 999px;
+      background: #d9f1ee;
+      overflow: hidden;
+      border: 1px solid #b5d8d4;
+    }
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: #0f766e;
+      transition: width 180ms ease;
+    }
+    .progress-text {
+      min-width: 42px;
+      text-align: right;
+      font-weight: 600;
+      color: #155e75;
+    }
 
     @media (max-width: 760px) {
       .box { padding: 12px; }
@@ -106,32 +132,46 @@
       </select>
       <label for="tarikh">Tarikh</label>
       <input id="tarikh" type="date" />
-      <label for="kategori">Jenis Kesalahan</label>
+      <label for="jenis-kesalahan">Jenis Kesalahan</label>
+      <select id="jenis-kesalahan">
+        <option value="">-- Sila pilih jenis kesalahan --</option>
+        <option value="BARANG LARANGAN">BARANG LARANGAN</option>
+        <option value="DADAH">DADAH</option>
+        <option value="KEKEMASAN DIRI">KEKEMASAN DIRI</option>
+        <option value="KENAKALAN">KENAKALAN</option>
+        <option value="KESALAHAN ASRAMA">KESALAHAN ASRAMA</option>
+        <option value="KESALAHAN SIBER">KESALAHAN SIBER</option>
+        <option value="KES KHAS">KES KHAS</option>
+        <option value="PENGLIBATAN POLITIK">PENGLIBATAN POLITIK</option>
+        <option value="SALAH LAKU BULI">SALAH LAKU BULI</option>
+        <option value="SALAH LAKU PONTENG KELAS">SALAH LAKU PONTENG KELAS</option>
+        <option value="SALAH LAKU ROKOK">SALAH LAKU ROKOK</option>
+        <option value="SALAH LAKU ROKOK ELEKTRONIK">SALAH LAKU ROKOK ELEKTRONIK</option>
+        <option value="SALAH LAKU TELEFON BIMBIT">SALAH LAKU TELEFON BIMBIT</option>
+        <option value="SALAH LAKU TIDAK AMANAH">SALAH LAKU TIDAK AMANAH</option>
+        <option value="SEKSUAL">SEKSUAL</option>
+        <option value="TINGKAH LAKU JENAYAH">TINGKAH LAKU JENAYAH</option>
+        <option value="TINGKAH LAKU KURANG SOPAN/BIADAP">TINGKAH LAKU KURANG SOPAN/BIADAP</option>
+        <option value="TINGKAH LAKU LUCAH">TINGKAH LAKU LUCAH</option>
+        <option value="TINGKAH LAKU TIDAK PENTINGKAN MASA">TINGKAH LAKU TIDAK PENTINGKAN MASA</option>
+        <option value="VANDALISME">VANDALISME</option>
+      </select>
+      <label for="kategori">Kategori</label>
       <select id="kategori">
-        <option>BARANG LARANGAN</option>
-        <option>DADAH</option>
-        <option>KEKEMASAN DIRI</option>
-        <option>KENAKALAN</option>
-        <option>KESALAHAN ASRAMA</option>
-        <option>KESALAHAN SIBER</option>
-        <option>KES KHAS</option>
-        <option>PENGLIBATAN POLITIK</option>
-        <option>SALAH LAKU BULI</option>
-        <option>SALAH LAKU PONTENG KELAS</option>
-        <option>SALAH LAKU ROKOK</option>
-        <option>SALAH LAKU ROKOK ELEKTRONIK</option>
-        <option>SALAH LAKU TELEFON BIMBIT</option>
-        <option>SALAH LAKU TIDAK AMANAH</option>
-        <option>SEKSUAL</option>
-        <option>TINGKAH LAKU JENAYAH</option>
-        <option>TINGKAH LAKU KURANG SOPAN/BIADAP</option>
-        <option>TINGKAH LAKU LUCAH</option>
-        <option>TINGKAH LAKU TIDAK PENTINGKAN MASA</option>
-        <option>VANDALISME</option>
+        <option value="">-- Sila pilih kategori --</option>
+        <option value="Berat">Berat</option>
+        <option value="Sederhana">Sederhana</option>
+        <option value="Ringan">Ringan</option>
       </select>
       <label for="catatan">Catatan</label>
       <textarea id="catatan" rows="4" placeholder="Masukkan butiran kes..."></textarea>
       <button id="simpan-btn" type="button">Simpan Rekod</button>
+      <div id="progress-wrap" class="progress-wrap">
+        <div class="progress-track">
+          <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div id="progress-text" class="progress-text">0%</div>
+      </div>
       <div id="status" class="status">Sedia untuk simpan rekod.</div>
     </div>
   </main>
@@ -147,9 +187,13 @@
     const noKpEl = document.getElementById("nokp");
     const kelasEl = document.getElementById("kelas");
     const tarikhEl = document.getElementById("tarikh");
+    const jenisKesalahanEl = document.getElementById("jenis-kesalahan");
     const kategoriEl = document.getElementById("kategori");
     const catatanEl = document.getElementById("catatan");
     const simpanBtn = document.getElementById("simpan-btn");
+    const progressWrapEl = document.getElementById("progress-wrap");
+    const progressBarEl = document.getElementById("progress-bar");
+    const progressTextEl = document.getElementById("progress-text");
     const statusEl = document.getElementById("status");
     tarikhEl.value = new Date().toISOString().slice(0, 10);
 
@@ -202,6 +246,20 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     }
 
+    function setProgress(percent, message) {
+      const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+      progressWrapEl.style.display = "flex";
+      progressBarEl.style.width = `${safePercent}%`;
+      progressTextEl.textContent = `${safePercent}%`;
+      if (message) statusEl.textContent = message;
+    }
+
+    function resetProgress() {
+      progressWrapEl.style.display = "none";
+      progressBarEl.style.width = "0%";
+      progressTextEl.textContent = "0%";
+    }
+
     async function sendToGoogleSheet(record) {
       if (!GAS_ENDPOINT) return false;
 
@@ -224,18 +282,26 @@
     }
 
     simpanBtn.addEventListener("click", async () => {
+      if (simpanBtn.disabled) return;
+      simpanBtn.disabled = true;
+      setProgress(5, "Memproses rekod... 5%");
+
       const nama = namaEl.value.trim();
       const noKp = noKpEl.value.trim();
       const kelas = kelasEl.value.trim();
       const tarikh = tarikhEl.value;
+      const jenisKesalahan = jenisKesalahanEl.value.trim();
       const kategori = kategoriEl.value.trim();
       const catatan = catatanEl.value.trim();
 
-      if (!nama || !noKp || !kelas || !tarikh || !catatan) {
-        statusEl.textContent = "Sila lengkapkan nama, no kp, kelas, tarikh dan catatan.";
+      if (!nama || !noKp || !kelas || !tarikh || !jenisKesalahan || !kategori || !catatan) {
+        statusEl.textContent = "Sila lengkapkan nama, no kp, kelas, tarikh, jenis kesalahan, kategori dan catatan.";
+        simpanBtn.disabled = false;
+        resetProgress();
         return;
       }
 
+      setProgress(25, "Menyimpan rekod tempatan... 25%");
       const now = new Date();
       const record = {
         id: noKp,
@@ -244,6 +310,7 @@
         nama,
         noKp,
         kelas,
+        jenisKesalahan,
         kategori,
         catatan,
         status: "Dalam Semakan"
@@ -253,6 +320,7 @@
       list.unshift(record);
       saveKesList(list);
 
+      setProgress(60, "Menghantar ke Google Sheet... 60%");
       let sent = false;
       try {
         sent = await sendToGoogleSheet(record);
@@ -260,16 +328,24 @@
         sent = false;
       }
 
+      setProgress(90, "Memuktamadkan simpanan... 90%");
       namaEl.value = "";
       noKpEl.value = "";
       kelasEl.selectedIndex = 0;
       tarikhEl.value = new Date().toISOString().slice(0, 10);
+      jenisKesalahanEl.selectedIndex = 0;
       catatanEl.value = "";
       kategoriEl.selectedIndex = 0;
 
+      setProgress(100, "Selesai memproses rekod... 100%");
       statusEl.textContent = sent
         ? "Rekod berjaya disimpan dan dihantar ke tab 'Rekod kes baru'."
         : "Rekod disimpan dalam aplikasi. Untuk hantar ke Google Sheet, isi URL Apps Script pada GAS_ENDPOINT.";
+
+      setTimeout(() => {
+        resetProgress();
+      }, 700);
+      simpanBtn.disabled = false;
     });
   </script>
 </body>
