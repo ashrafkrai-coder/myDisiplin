@@ -4,6 +4,19 @@ function handlePhotoAction_(payload) {
   var secret = props.getProperty('PHOTO_ACCESS_TOKEN');
   if (!secret || secret.length < 24) throw new Error('Pentadbir perlu tetapkan PHOTO_ACCESS_TOKEN sekurang-kurangnya 24 aksara dalam Script Properties.');
   if (String(payload.photoToken || '') !== secret) throw new Error('Kod akses foto tidak sah.');
+  if (payload.action === 'photo_batch') {
+    // Fast path: no roster read. Only 12-digit IDs that already have a stored photo are returned.
+    var batch = {};
+    (Array.isArray(payload.noKps) ? payload.noKps : []).slice(0, 12).forEach(function(k){
+      k = String(k);
+      if (!/^d{12}$/.test(k)) return;
+      var fileId = props.getProperty('photo_' + k);
+      if (!fileId) return;
+      var uri = photoDataUri_(fileId);
+      if (uri) batch[k] = uri;
+    });
+    return {ok:true, photos:batch};
+  }
   var students = photoStudents_();
   if (payload.action === 'photo_students') return {ok:true, students:students};
   if (payload.action === 'photo_list') {
@@ -13,8 +26,8 @@ function handlePhotoAction_(payload) {
     students.filter(function(s){return classKey_(s.kelas) === wanted;}).forEach(function(s){
       var id = props.getProperty('photo_' + s.noKp);
       if (id) {
-        try { var blob=DriveApp.getFileById(id).getBlob(); photos[s.noKp]='data:image/jpeg;base64,'+Utilities.base64Encode(blob.getBytes()); }
-        catch(e) { /* Missing photo is shown as initials; do not abort the class. */ }
+        var uri = photoDataUri_(id);
+        if (uri) photos[s.noKp] = uri; /* Missing photo is shown as initials; do not abort the class. */
       }
     });
     return {ok:true, photos:photos};
@@ -73,3 +86,14 @@ function photoCases_(noKp) {
 }
 // Class names are compared ignoring case, spaces and hyphens so '1 AL FARABI' and '1 AL-FARABI' match.
 function classKey_(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+// Reads a stored photo as a data URI. Cached by Drive file ID, which changes whenever the photo is replaced.
+function photoDataUri_(fileId) {
+  var cache = CacheService.getScriptCache(), key = 'ph_' + fileId;
+  var hit = cache.get(key);
+  if (hit) return hit;
+  try {
+    var uri = 'data:image/jpeg;base64,' + Utilities.base64Encode(DriveApp.getFileById(fileId).getBlob().getBytes());
+    if (uri.length < 90000) cache.put(key, uri, 21600);
+    return uri;
+  } catch (e) { return ''; }
+}

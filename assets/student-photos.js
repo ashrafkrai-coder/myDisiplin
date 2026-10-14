@@ -133,8 +133,20 @@
     if(!classEl.value){status.textContent='Pilih kelas dahulu.';return;}
     if($('kelas')){const o=Array.from($('kelas').options).find(o=>key(o.value)===key(classEl.value));if(o)$('kelas').value=o.value;}
     status.textContent='Memuat foto kelas...';
-    try{const result=await api('photo_list',{kelas:classEl.value});if(current!==generation)return;photos=result.photos||{};render();status.textContent='Tekan foto atau nama untuk membuka profil.';}
-    catch(e){if(current===generation)status.textContent=e.message;}
+    render();
+    // Small parallel batches: cards fill in as each batch returns instead of waiting for the whole class.
+    const ids=students.filter(s=>key(s.kelas)===key(classEl.value)).map(s=>s.noKp);
+    const batches=[];for(let i=0;i<ids.length;i+=8)batches.push(ids.slice(i,i+8));
+    let done=0;
+    try{
+      await Promise.all(batches.map(async noKps=>{
+        const result=await api('photo_batch',{noKps});
+        if(current!==generation)return;
+        Object.assign(photos,result.photos||{});done++;
+        status.textContent='Memuat foto kelas... ('+done+'/'+batches.length+')';render();
+      }));
+      if(current===generation)status.textContent='Tekan foto atau nama untuk membuka profil.';
+    }catch(e){if(current===generation)status.textContent=e.message;}
   }
   async function connect() {
     status.textContent='Memuat senarai murid...';grid.replaceChildren();

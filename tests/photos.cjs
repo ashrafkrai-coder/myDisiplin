@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const properties=new Map([['PHOTO_ACCESS_TOKEN','a'.repeat(32)]]);let writes=0,locked=0;
+const cacheStore=new Map();const properties=new Map([['PHOTO_ACCESS_TOKEN','a'.repeat(32)]]);let writes=0,locked=0;
 const rows=[['BIL','NAMA','NO. KAD PENGENALAN',' KELAS'],['1','MURID UJIAN','090101010001','1 AL FARABI']];
-const context={DEFAULT_SHEET_ID:'test',DEFAULT_TAB_NAME:'Rekod kes baru',PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k),setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>rows.map(r=>r.slice())})})})},DriveApp:{createFolder:()=>({getId:()=> 'folder',createFile:()=>{writes++;return {getId:()=> 'photo'}}}),getFileById:()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{writes++;}})},Utilities:{base64Decode:s=>Array.from(Buffer.from(s,'base64')),base64Encode:b=>Buffer.from(b).toString('base64'),getUuid:()=> 'random-id',newBlob:b=>b},LockService:{getScriptLock:()=>({waitLock:()=>locked++,releaseLock:()=>locked--})}};
+const context={DEFAULT_SHEET_ID:'test',DEFAULT_TAB_NAME:'Rekod kes baru',PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k),setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>rows.map(r=>r.slice())})})})},DriveApp:{createFolder:()=>({getId:()=> 'folder',createFile:()=>{writes++;return {getId:()=> 'photo'}}}),getFileById:()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{writes++;}})},Utilities:{base64Decode:s=>Array.from(Buffer.from(s,'base64')),base64Encode:b=>Buffer.from(b).toString('base64'),getUuid:()=> 'random-id',newBlob:b=>b},CacheService:{getScriptCache:()=>({get:k=>cacheStore.get(k)||null,put:(k,v)=>cacheStore.set(k,v)})},LockService:{getScriptLock:()=>({waitLock:()=>locked++,releaseLock:()=>locked--})}};
 vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../gas/Photos.gs'),'utf8'),context);
 const call=p=>context.handlePhotoAction_({photoToken:'a'.repeat(32),...p});
 assert.throws(()=>call({action:'photo_save',photoToken:'wrong'}),/tidak sah/);assert.equal(writes,0);
@@ -31,5 +31,15 @@ assert.equal(Object.keys(call({action:'photo_list',kelas:'1 al-farabi'}).photos)
 context.DriveApp.getFileById=()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{}});
 properties.set('photo_'+roster[0].noKp,'photo');
 assert(call({action:'photo_list',kelas:'1 AL-FARABI'}).photos[roster[0].noKp],'class name must match ignoring hyphen/case');
+properties.delete('photo_'+roster[0].noKp);
+// Batch path: no roster needed, rejects bad IDs, returns only stored photos, uses cache.
+context.DriveApp.getFileById=()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{}});
+properties.set('photo_'+roster[0].noKp,'photo');
+const b=call({action:'photo_batch',noKps:[roster[0].noKp,'../x','111111111111']}).photos;
+assert.deepEqual(Object.keys(b),[roster[0].noKp]);assert(b[roster[0].noKp].startsWith('data:image/jpeg;base64,'));
+assert(cacheStore.has('ph_photo'));
+context.DriveApp.getFileById=()=>{throw new Error('drive must not be hit when cached');};
+assert.equal(Object.keys(call({action:'photo_batch',noKps:[roster[0].noKp]}).photos).length,1);
+assert.throws(()=>context.handlePhotoAction_({action:'photo_batch',photoToken:'wrong',noKps:[]}),/tidak sah/);
 properties.delete('photo_'+roster[0].noKp);
 console.log('PASS: token enforcement, trimmed headers, leading-zero ID, membership, JPEG and size validation, class isolation, save/list/delete and lock release.');
