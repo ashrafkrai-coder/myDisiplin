@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const properties=new Map([['PHOTO_ACCESS_TOKEN','a'.repeat(32)]]);let writes=0,locked=0;
 const rows=[['BIL','NAMA','NO. KAD PENGENALAN',' KELAS'],['1','MURID UJIAN','090101010001','1 AL FARABI']];
-const context={DEFAULT_SHEET_ID:'test',PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k),setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>rows.map(r=>r.slice())})})})},DriveApp:{createFolder:()=>({getId:()=> 'folder',createFile:()=>{writes++;return {getId:()=> 'photo'}}}),getFileById:()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{writes++;}})},Utilities:{base64Decode:s=>Array.from(Buffer.from(s,'base64')),base64Encode:b=>Buffer.from(b).toString('base64'),getUuid:()=> 'random-id',newBlob:b=>b},LockService:{getScriptLock:()=>({waitLock:()=>locked++,releaseLock:()=>locked--})}};
+const context={DEFAULT_SHEET_ID:'test',DEFAULT_TAB_NAME:'Rekod kes baru',PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k),setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>rows.map(r=>r.slice())})})})},DriveApp:{createFolder:()=>({getId:()=> 'folder',createFile:()=>{writes++;return {getId:()=> 'photo'}}}),getFileById:()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{writes++;}})},Utilities:{base64Decode:s=>Array.from(Buffer.from(s,'base64')),base64Encode:b=>Buffer.from(b).toString('base64'),getUuid:()=> 'random-id',newBlob:b=>b},LockService:{getScriptLock:()=>({waitLock:()=>locked++,releaseLock:()=>locked--})}};
 vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../gas/Photos.gs'),'utf8'),context);
 const call=p=>context.handlePhotoAction_({photoToken:'a'.repeat(32),...p});
 assert.throws(()=>call({action:'photo_save',photoToken:'wrong'}),/tidak sah/);assert.equal(writes,0);
@@ -18,4 +18,13 @@ assert(call({action:'photo_delete',noKp:roster[0].noKp}).ok);assert(!properties.
 properties.set('photo_'+roster[0].noKp,'missing');
 context.DriveApp.getFileById=()=>{throw new Error('not found');};
 assert(call({action:'photo_delete',noKp:roster[0].noKp}).ok);assert(!properties.has('photo_'+roster[0].noKp));assert.equal(locked,0);
+// Case records: matched on IC (dashes/leading zeros tolerated), other students excluded, token still required.
+const caseRows=[['id','no_kp','tarikh','masa','nama','kelas','jenis_kesalahan','kategori','catatan','status'],['1','90101010001','2026-01-05','08:10','MURID UJIAN','1 AL FARABI','Lewat','Ringan','Lewat 10 minit','Selesai'],['2','111111111111','2026-01-06','09:00','LAIN','1 AMANAH','Ponteng','Berat','','Dalam Semakan']];
+context.SpreadsheetApp={openById:()=>({getSheetByName:n=>({getLastRow:()=>n==='Rekod kes baru'?caseRows.length:rows.length,getDataRange:()=>({getDisplayValues:()=>(n==='Rekod kes baru'?caseRows:rows).map(r=>r.slice())})})})};
+const cases=call({action:'photo_cases',noKp:roster[0].noKp});
+assert.equal(cases.cases.length,1);assert.equal(cases.cases[0].jenis,'Lewat');assert.equal(cases.student.nama,'MURID UJIAN');
+caseRows.push(['3','090101-01-0001','2026-02-01','','MURID UJIAN','1 AL FARABI','Rambut','Ringan','','Selesai']);
+assert.equal(call({action:'photo_cases',noKp:roster[0].noKp}).cases.length,2);
+assert.throws(()=>call({action:'photo_cases',noKp:'unknown'}),/tidak ditemui/);
+assert.throws(()=>call({action:'photo_cases',noKp:roster[0].noKp,photoToken:'wrong'}),/tidak sah/);
 console.log('PASS: token enforcement, trimmed headers, leading-zero ID, membership, JPEG and size validation, class isolation, save/list/delete and lock release.');

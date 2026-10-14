@@ -72,10 +72,38 @@
       return data;
     } finally {URL.revokeObjectURL(url);}
   }
+  const caseCache = {};
+  const formatIc = v => /^\d{12}$/.test(v) ? v.slice(0,6)+'-'+v.slice(6,8)+'-'+v.slice(8) : v;
+  // Students with discipline records get full name, IC and offences; others show nothing extra.
+  async function showCases(student, box) {
+    try {
+      if (!caseCache[student.noKp]) caseCache[student.noKp] = (await api('photo_cases',{noKp:student.noKp})).cases || [];
+      const cases = caseCache[student.noKp];
+      if (!box.isConnected || !cases.length) return;
+      const head = document.createElement('div');head.className='case-head';
+      const name = document.createElement('p');name.innerHTML='<strong>Nama penuh:</strong> ';name.append(student.nama);
+      const ic = document.createElement('p');ic.innerHTML='<strong>No. KP:</strong> ';ic.append(formatIc(student.noKp));
+      const title = document.createElement('h3');title.textContent='Kesalahan disiplin ('+cases.length+')';
+      const list = document.createElement('ol');list.className='case-list';
+      for (const c of cases) {
+        const li = document.createElement('li');
+        const main = document.createElement('strong');main.textContent=c.jenis||'(Jenis kesalahan tidak dinyatakan)';
+        const meta = document.createElement('div');
+        meta.textContent=[c.tarikh,c.masa,c.kategori,c.status].filter(Boolean).join(' · ');
+        li.append(main,meta);
+        if (c.catatan) { const note=document.createElement('div');note.textContent=c.catatan;li.append(note); }
+        list.append(li);
+      }
+      head.append(name,ic);box.replaceChildren(head,title,list);
+    } catch (e) { /* Case details are optional; the photo tools must keep working. */ }
+  }
   function openProfile(student) {
     dialog.replaceChildren(); const title=document.createElement('h2');title.textContent=student.nama;
     const klass=document.createElement('p');klass.textContent=student.kelas;
-    const preview=avatar(student,'180px');dialog.append(title,klass,preview);
+    const preview=avatar(student,'180px');
+    const info=document.createElement('div');info.className='case-info';info.setAttribute('aria-live','polite');
+    dialog.append(title,klass,preview,info);
+    showCases(student,info);
     const msg=document.createElement('p');msg.setAttribute('role','status');
     const actions=document.createElement('div');actions.className='profile-actions';
     const choose=document.createElement('button');choose.type='button';choose.textContent='Pilih murid ini';

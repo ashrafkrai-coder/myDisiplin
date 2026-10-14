@@ -19,6 +19,11 @@ function handlePhotoAction_(payload) {
     return {ok:true, photos:photos};
   }
   if (!students.some(function(s){return s.noKp === String(payload.noKp);})) throw new Error('Murid tidak ditemui dalam tab data.');
+  if (payload.action === 'photo_cases') {
+    var noKp = String(payload.noKp);
+    var student = students.filter(function(s){return s.noKp === noKp;})[0];
+    return {ok:true, student:student, cases:photoCases_(noKp)};
+  }
   var lock=LockService.getScriptLock();lock.waitLock(30000);
   try {
     var property='photo_'+payload.noKp, previous=props.getProperty(property);
@@ -48,4 +53,20 @@ function photoStudents_() {
   var n=headers.indexOf('NAMA'),k=headers.indexOf('KELAS'),id=headers.indexOf('NOKADPENGENALAN');
   if(n<0 || k<0 || id<0)throw new Error('Kolum NAMA, KELAS dan NO. KAD PENGENALAN diperlukan.');
   return rows.filter(function(r){return r[n] && r[k] && r[id];}).map(function(r){return {nama:r[n].trim(),kelas:r[k].trim(),noKp:r[id].replace(/[^0-9]/g,'').padStart(12,'0')};});
+}
+// Discipline records for one student, matched on IC number from the case sheet.
+function photoCases_(noKp) {
+  var sheet=SpreadsheetApp.openById(DEFAULT_SHEET_ID).getSheetByName(DEFAULT_TAB_NAME);
+  if(!sheet || sheet.getLastRow()<2) return [];
+  var rows=sheet.getDataRange().getDisplayValues();
+  var headers=rows.shift().map(function(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');});
+  var col=function(name){return headers.indexOf(name);};
+  var ic=col('nokp'), tarikh=col('tarikh'), masa=col('masa'), jenis=col('jeniskesalahan'), kategori=col('kategori'), catatan=col('catatan'), status=col('status');
+  if(ic<0) return [];
+  var get=function(r,i){return i<0?'':String(r[i]).trim();};
+  return rows.filter(function(r){
+    return String(r[ic]).replace(/[^0-9]/g,'').padStart(12,'0')===noKp;
+  }).map(function(r){
+    return {tarikh:get(r,tarikh),masa:get(r,masa),jenis:get(r,jenis),kategori:get(r,kategori),catatan:get(r,catatan),status:get(r,status)};
+  });
 }

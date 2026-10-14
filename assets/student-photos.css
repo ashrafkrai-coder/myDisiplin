@@ -8,3 +8,11 @@
 .photo-card{color:#0f172a}
 .photo-controls label{display:grid;gap:6px;font-size:13px;color:#475569}
 .photo-panel h2,.profile-dialog h2{color:#0f766e}
+
+.case-info:empty{display:none}
+.case-head{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px 12px;margin:8px 0;color:#7f1d1d}
+.case-head p{margin:4px 0;overflow-wrap:anywhere}
+.profile-dialog h3{margin:12px 0 6px;color:#b91c1c;font-size:15px}
+.case-list{margin:0 0 12px;padding-left:20px;font-size:13px;line-height:1.5;color:#0f172a}
+.case-list li{margin-bottom:8px;overflow-wrap:anywhere}
+.case-list li div{color:#475569}
