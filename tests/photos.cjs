@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const properties=new Map([['PHOTO_ACCESS_TOKEN','a'.repeat(32)]]);let writes=0,locked=0;
+const rows=[['BIL','NAMA','NO. KAD PENGENALAN',' KELAS'],['1','MURID UJIAN','090101010001','1 AL FARABI']];
+const context={DEFAULT_SHEET_ID:'test',PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k),setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},SpreadsheetApp:{openById:()=>({getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>rows.map(r=>r.slice())})})})},DriveApp:{createFolder:()=>({getId:()=> 'folder',createFile:()=>{writes++;return {getId:()=> 'photo'}}}),getFileById:()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{writes++;}})},Utilities:{base64Decode:s=>Array.from(Buffer.from(s,'base64')),base64Encode:b=>Buffer.from(b).toString('base64'),getUuid:()=> 'random-id',newBlob:b=>b},LockService:{getScriptLock:()=>({waitLock:()=>locked++,releaseLock:()=>locked--})}};
+vm.createContext(context);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../gas/Photos.gs'),'utf8'),context);
+const call=p=>context.handlePhotoAction_({photoToken:'a'.repeat(32),...p});
+assert.throws(()=>call({action:'photo_save',photoToken:'wrong'}),/tidak sah/);assert.equal(writes,0);
+const roster=call({action:'photo_students'}).students;assert.equal(roster[0].noKp,'090101010001');assert.equal(roster[0].kelas,'1 AL FARABI');
+assert.throws(()=>call({action:'photo_save',noKp:'unknown',data:'anything'}),/tidak ditemui/);
+assert.throws(()=>call({action:'photo_save',noKp:roster[0].noKp,data:'data:image/jpeg;base64,AAAA'}),/JPEG/);assert.equal(locked,0);
+assert.throws(()=>call({action:'photo_save',noKp:roster[0].noKp,data:'data:image/jpeg;base64,'+'a'.repeat(150000)}),/saiz/);
+assert(call({action:'photo_save',noKp:roster[0].noKp,data:'data:image/jpeg;base64,/9j/2Q=='}).ok);
+assert.equal(properties.get('photo_'+roster[0].noKp),'photo');
+assert.equal(call({action:'photo_list',kelas:'1 AL FARABI'}).photos[roster[0].noKp],'data:image/jpeg;base64,/9j/2Q==');
+assert.equal(Object.keys(call({action:'photo_list',kelas:'2 AMANAH'}).photos).length,0);
+assert(call({action:'photo_delete',noKp:roster[0].noKp}).ok);assert(!properties.has('photo_'+roster[0].noKp));assert.equal(locked,0);
+console.log('PASS: token enforcement, trimmed headers, leading-zero ID, membership, JPEG and size validation, class isolation, save/list/delete and lock release.');

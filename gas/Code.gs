@@ -4,6 +4,9 @@ const DEFAULT_TAB_NAME = 'Rekod kes baru';
 function doPost(e) {
   try {
     const payload = parsePayload_(e);
+    if (String(payload.action || "").indexOf("photo_") === 0) {
+      return jsonResponse_(handlePhotoAction_(payload));
+    }
     const sheetId = payload.sheetId || (e && e.parameter && e.parameter.sheetId) || DEFAULT_SHEET_ID;
     const tabName = payload.tab || (e && e.parameter && e.parameter.tab) || DEFAULT_TAB_NAME;
 

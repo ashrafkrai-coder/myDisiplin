@@ -348,6 +348,7 @@
       .menu a { font-size: 12px; padding: 11px 8px; }
     }
   </style>
+  <link rel="stylesheet" href="assets/student-photos.css" />
 </head>
 <body>
   <main>
@@ -367,6 +368,7 @@
       <a href="dashbord.html">Dashbord</a>
     </div>
 
+    <div id="student-photo-picker"></div>
     <!-- Form -->
     <p class="section-label">Maklumat Murid</p>
     <div class="form-card">
@@ -625,7 +627,7 @@
 
       namaEl.value = "";
       noKpEl.value = "";
-      kelasEl.selectedIndex = 0;
+      window.myDisiplinPhotoPicker?.resetAfterSave();
       tarikhEl.value = new Date().toISOString().slice(0, 10);
       jenisKesalahanEl.selectedIndex = 0;
       catatanEl.value = "";
@@ -644,5 +646,6 @@
       simpanBtn.disabled = false;
     });
   </script>
+  <script src="assets/student-photos.js"></script>
 </body>
 </html>
