@@ -280,6 +280,56 @@
       border-left: 4px solid var(--ios-teal);
     }
 
+    .student-head {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .student-photo {
+      flex: 0 0 auto;
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      object-fit: cover;
+      background: var(--ios-fill);
+      color: var(--ios-label3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .student-head-text {
+      min-width: 0;
+    }
+
+    .student-meta {
+      margin: 0;
+      font-size: 13px;
+      color: var(--ios-label3);
+      overflow-wrap: anywhere;
+    }
+
+    .photo-hint {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--ios-label3);
+    }
+
+    .photo-hint button {
+      font: inherit;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--ios-separator);
+      background: var(--ios-surface);
+      color: var(--ios-accent);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
     .student-title {
       margin: 0 0 4px;
       font-size: 17px;
@@ -570,7 +620,10 @@
           return;
         }
 
-        searchOutput.innerHTML = list
+        const hint = photoToken()
+          ? ""
+          : '<p class="photo-hint">Foto murid tidak dipaparkan. <button type="button" data-act="photo-token">Masukkan kod akses foto</button></p>';
+        searchOutput.innerHTML = hint + list
           .map((student) => {
             const studentNameKey = normalizeName(student.nama);
             const matchedCases = caseRecords.filter((item) => normalizeName(item.nama) === studentNameKey);
@@ -583,8 +636,13 @@
 
             return `
               <div class="student-item">
-                <p class="student-title">${escapeHtml(student.nama || "-")}</p>
-                <p>No KP: ${escapeHtml(student.noKp || "-")} | Kelas: ${escapeHtml(student.kelas || "-")}</p>
+                <div class="student-head">
+                  <span class="student-photo" data-nokp="${escapeHtml(photoKey(student.noKp))}" aria-hidden="true">${escapeHtml(initials(student.nama))}</span>
+                  <div class="student-head-text">
+                    <p class="student-title">${escapeHtml(student.nama || "-")}</p>
+                    <p class="student-meta">No KP: ${escapeHtml(student.noKp || "-")} | Kelas: ${escapeHtml(student.kelas || "-")}</p>
+                  </div>
+                </div>
                 <p><strong>Rekod Kesalahan:</strong></p>
                 ${caseHtml}
                 <div class="student-actions">
@@ -595,7 +653,80 @@
             `;
           })
           .join("");
+        loadPhotos();
       }
+
+      // ── Student photos (private; fetched with the photo access code) ──
+      const PHOTO_ENDPOINT = "https://script.google.com/macros/s/AKfycbxEt9OP-SO8k6VquhFT0wrRRWM26-ohEk9hzdiR68EAG4FjmnmqM1mUfHqzjkByEOu7/exec";
+      const PHOTO_TOKEN_KEY = "mydisiplin_photo_token";
+      const photoCache = {};
+      const photoPending = new Set();
+
+      function photoToken() {
+        try { return sessionStorage.getItem(PHOTO_TOKEN_KEY) || ""; } catch (e) { return ""; }
+      }
+
+      function photoKey(noKp) {
+        const digits = String(noKp || "").replace(/[^0-9]/g, "");
+        return digits ? digits.padStart(12, "0") : "";
+      }
+
+      function initials(name) {
+        return String(name || "").trim().split(/s+/).slice(0, 2).map((part) => part.charAt(0)).join("").toUpperCase() || "?";
+      }
+
+      function showPhoto(el, src) {
+        const img = document.createElement("img");
+        img.className = "student-photo";
+        img.alt = "";
+        img.src = src;
+        img.dataset.nokp = el.dataset.nokp;
+        el.replaceWith(img);
+      }
+
+      function applyPhotos() {
+        searchOutput.querySelectorAll("span.student-photo[data-nokp]").forEach((el) => {
+          const src = photoCache[el.dataset.nokp];
+          if (src) showPhoto(el, src);
+        });
+      }
+
+      async function loadPhotos() {
+        const token = photoToken();
+        if (!token) return;
+        const wanted = Array.from(searchOutput.querySelectorAll("span.student-photo[data-nokp]"))
+          .map((el) => el.dataset.nokp)
+          .filter((id) => id && !(id in photoCache) && !photoPending.has(id));
+        const ids = Array.from(new Set(wanted));
+        ids.forEach((id) => photoPending.add(id));
+        applyPhotos();
+        for (let i = 0; i < ids.length; i += 8) {
+          const noKps = ids.slice(i, i + 8);
+          fetch(PHOTO_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "photo_batch", photoToken: token, noKps })
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              if (!result.ok) throw new Error(result.error || "photo_batch gagal");
+              noKps.forEach((id) => { photoCache[id] = (result.photos && result.photos[id]) || ""; });
+              applyPhotos();
+            })
+            .catch(() => {})
+            .finally(() => noKps.forEach((id) => photoPending.delete(id)));
+        }
+      }
+
+      searchOutput.addEventListener("click", (event) => {
+        const button = event.target.closest('[data-act="photo-token"]');
+        if (!button) return;
+        const token = window.prompt("Kod akses foto (PHOTO_ACCESS_TOKEN):");
+        if (!token || !token.trim()) return;
+        try { sessionStorage.setItem(PHOTO_TOKEN_KEY, token.trim()); } catch (e) { return; }
+        button.closest(".photo-hint").remove();
+        loadPhotos();
+      });
 
       async function loadStudentsFromSheet() {
         const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_TAB)}&tqx=out:json`;
