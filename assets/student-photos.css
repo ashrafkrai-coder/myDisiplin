@@ -1,2 +1,10 @@
 
 .photo-panel{background:white;border-radius:16px;padding:16px;margin-bottom:16px}.photo-controls{display:grid;gap:10px}.photo-controls input,.photo-controls select,.photo-panel button,.profile-dialog button{font:inherit;padding:12px;border:1px solid #d1d5db;border-radius:10px;background:white}.photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.photo-card{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;font-size:12px!important;overflow-wrap:anywhere}.photo-card[aria-pressed=true]{outline:3px solid #007aff}.student-avatar{width:76px;height:76px;border-radius:12px;object-fit:cover;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:24px;color:#475569}.photo-status{font-size:13px;line-height:1.5}.profile-dialog{border:0;border-radius:20px;padding:22px;width:min(420px,92vw);max-height:90dvh;overflow:auto}.profile-dialog::backdrop{background:#0008}.profile-dialog img{width:180px;height:180px;object-fit:cover;border-radius:16px;display:block;margin:16px auto}.profile-actions{display:flex;gap:8px;flex-wrap:wrap}.profile-dialog input{max-width:100%;padding:10px;font:inherit}.photo-confirm{display:flex;gap:8px;align-items:center;padding:12px 0}.photo-panel button:disabled,.profile-dialog button:disabled{opacity:.5}.photo-link{display:inline-block;margin:8px;color:#007aff}
+
+/* theme.css sets button text to white; these buttons use a white background, so text must be dark. */
+.photo-panel,.profile-dialog{color:#0f172a}
+.photo-panel button,.profile-dialog button{color:#0f172a;font-weight:600}
+.photo-panel button:hover,.profile-dialog button:hover{background:#f1f5f9}
+.photo-card{color:#0f172a}
+.photo-controls label{display:grid;gap:6px;font-size:13px;color:#475569}
+.photo-panel h2,.profile-dialog h2{color:#0f766e}
