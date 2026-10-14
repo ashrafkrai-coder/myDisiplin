@@ -9,7 +9,7 @@ function handlePhotoAction_(payload) {
     var batch = {};
     (Array.isArray(payload.noKps) ? payload.noKps : []).slice(0, 12).forEach(function(k){
       k = String(k);
-      if (!/^d{12}$/.test(k)) return;
+      if (!/^[0-9]{12}$/.test(k)) return;
       var fileId = props.getProperty('photo_' + k);
       if (!fileId) return;
       var uri = photoDataUri_(fileId);
