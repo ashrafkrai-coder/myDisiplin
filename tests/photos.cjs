@@ -14,4 +14,8 @@ assert.equal(properties.get('photo_'+roster[0].noKp),'photo');
 assert.equal(call({action:'photo_list',kelas:'1 AL FARABI'}).photos[roster[0].noKp],'data:image/jpeg;base64,/9j/2Q==');
 assert.equal(Object.keys(call({action:'photo_list',kelas:'2 AMANAH'}).photos).length,0);
 assert(call({action:'photo_delete',noKp:roster[0].noKp}).ok);assert(!properties.has('photo_'+roster[0].noKp));assert.equal(locked,0);
+// Delete must succeed and clear the reference even if the Drive file is already gone.
+properties.set('photo_'+roster[0].noKp,'missing');
+context.DriveApp.getFileById=()=>{throw new Error('not found');};
+assert(call({action:'photo_delete',noKp:roster[0].noKp}).ok);assert(!properties.has('photo_'+roster[0].noKp));assert.equal(locked,0);
 console.log('PASS: token enforcement, trimmed headers, leading-zero ID, membership, JPEG and size validation, class isolation, save/list/delete and lock release.');

@@ -59,7 +59,8 @@
     if(file.size>15*1024*1024) throw new Error('Foto terlalu besar. Had fail asal ialah 15 MB.');
     const url=URL.createObjectURL(file), image=new Image();
     try {
-      image.src=url;await image.decode();
+      image.src=url;
+      try{await image.decode();}catch(e){throw new Error('Fail foto rosak atau tidak boleh dibaca. Cuba foto lain.');}
       const canvas=document.createElement('canvas');canvas.width=320;canvas.height=320;
       const side=Math.min(image.naturalWidth,image.naturalHeight);
       canvas.getContext('2d').drawImage(image,(image.naturalWidth-side)/2,(image.naturalHeight-side)/2,side,side,0,0,320,320);

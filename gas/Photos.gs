@@ -23,7 +23,7 @@ function handlePhotoAction_(payload) {
   try {
     var property='photo_'+payload.noKp, previous=props.getProperty(property);
     if(payload.action === 'photo_delete') {
-      if(previous) DriveApp.getFileById(previous).setTrashed(true);
+      if(previous){try{DriveApp.getFileById(previous).setTrashed(true);}catch(e){/* File already gone; still clear the reference. */}}
       props.deleteProperty(property);return {ok:true};
     }
     if(payload.action !== 'photo_save') throw new Error('Tindakan foto tidak sah.');
