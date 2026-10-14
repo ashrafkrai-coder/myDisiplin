@@ -4,11 +4,14 @@
   const root = document.getElementById('student-photo-picker');
   if (!root) return;
   const endpoint = 'https://script.google.com/macros/s/AKfycbz6vNSdvbA4syW5rI4kwn4PwOyZeRC43tofD9XCuCDl_LVFdZaiQarZVHXE2d4l4dnu/exec';
+  // Must match the KELAS values in the sheet exactly; the server filters by exact name.
+  const CLASSES = ['1 AL FARABI','1 AMANAH','1 BAKTI','1 CEKAL','1 DAMAI','1 GIGIH','1 HORMAT','1 IKHLAS','1 JUJUR','2 AL FARABI','2 AMANAH','2 BAKTI','2 CEKAL','2 DAMAI','2 GIGIH','2 HORMAT','2 IKHLAS','2 JUJUR','3 AL-FARABI','3 AMANAH','3 BAKTI','3 CEKAL','3 DAMAI','3 GIGIH','3 HORMAT','3 IKHLAS','3 JUJUR','4 AMANAH','4 BAKTI','4 CEKAL','4 DAMAI','4 GIGIH','4 HORMAT','4 IKHLAS','4 JUJUR','4 PVMA','5 AMANAH','5 BAKTI','5 CEKAL','5 DAMAI','5 GIGIH','5 HORMAT','5 IKHLAS','5 JUJUR','5 PVMA'];
   const key = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   let students = [], photos = {}, selected = null, generation = 0;
   root.innerHTML = `<section class="photo-panel"><h2>Pilih murid mengikut kelas</h2><div class="photo-controls"><label>Kelas<select id="photo-class"><option value="">Pilih kelas dahulu</option></select></label><label>Cari nama<input id="photo-search" type="search" placeholder="Nama murid"></label><button id="photo-connect" type="button">Sambung / tukar kod akses foto</button></div><p id="photo-status" class="photo-status" role="status"></p><div id="photo-grid" class="photo-grid"></div><div id="photo-selected"></div></section>`;
   const $ = id => document.getElementById(id);
   const classEl = $('photo-class'), status = $('photo-status'), grid = $('photo-grid');
+  CLASSES.forEach(c => classEl.add(new Option(c, c)));
   const dialog = document.createElement('dialog'); dialog.className = 'profile-dialog'; document.body.append(dialog);
   async function api(action, data = {}) {
     const token = sessionStorage.getItem('mydisiplin_photo_token');
@@ -109,13 +112,24 @@
     status.textContent='Memuat senarai murid...';grid.replaceChildren();
     try {
       const result=await api('photo_students');students=result.students;
-      const previous=classEl.value || ($('kelas')?.value ?? '');classEl.replaceChildren(new Option('Pilih kelas dahulu',''));
-      [...new Set(students.map(s=>s.kelas))].sort((a,b)=>a.localeCompare(b)).forEach(c=>classEl.add(new Option(c,c)));
+      const previous=classEl.value || ($('kelas')?.value ?? '');
+      const known=new Set(Array.from(classEl.options).map(o=>key(o.value)));
+      [...new Set(students.map(s=>s.kelas))].filter(c=>!known.has(key(c))).sort((a,b)=>a.localeCompare(b)).forEach(c=>classEl.add(new Option(c,c)));
       classEl.value=Array.from(classEl.options).find(o=>key(o.value)===key(previous))?.value||'';await loadClass();
     }catch(e){students=[];photos={};clearSelection();status.textContent=e.message;}
   }
-  $('photo-connect').onclick=()=>{const token=prompt('Kod akses foto (PHOTO_ACCESS_TOKEN dalam Apps Script):');if(token?.trim()){sessionStorage.setItem('mydisiplin_photo_token',token.trim());connect();}};
-  classEl.onchange=loadClass;$('photo-search').oninput=render;
+  function askToken() {
+    const token=prompt('Kod akses foto (PHOTO_ACCESS_TOKEN dalam Apps Script):');
+    if(!token?.trim())return false;
+    sessionStorage.setItem('mydisiplin_photo_token',token.trim());return true;
+  }
+  $('photo-connect').onclick=()=>{if(askToken())connect();};
+  // The class list is built in, so the dropdown works at once; ask for the access code only when first needed.
+  classEl.onchange=()=>{
+    if(!classEl.value){loadClass();return;}
+    if(!sessionStorage.getItem('mydisiplin_photo_token') && !askToken()){status.textContent='Kod akses foto diperlukan untuk memuatkan murid.';return;}
+    if(students.length)loadClass();else connect();
+  };$('photo-search').oninput=render;
   // Capture phase prevents the existing save handler from recording an unconfirmed or changed identity.
   $('simpan-btn')?.addEventListener('click',event=>{
     if(selected && (!$('photo-confirmed')?.checked || $('nokp').value!==selected.noKp || $('nama').value!==selected.nama || key($('kelas').value)!==key(selected.kelas))){
