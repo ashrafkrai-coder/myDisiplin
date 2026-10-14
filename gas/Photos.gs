@@ -9,7 +9,8 @@ function handlePhotoAction_(payload) {
   if (payload.action === 'photo_list') {
     if (!payload.kelas) throw new Error('Pilih kelas dahulu.');
     var photos = {};
-    students.filter(function(s){return s.kelas === payload.kelas;}).forEach(function(s){
+    var wanted = classKey_(payload.kelas);
+    students.filter(function(s){return classKey_(s.kelas) === wanted;}).forEach(function(s){
       var id = props.getProperty('photo_' + s.noKp);
       if (id) {
         try { var blob=DriveApp.getFileById(id).getBlob(); photos[s.noKp]='data:image/jpeg;base64,'+Utilities.base64Encode(blob.getBytes()); }
@@ -70,3 +71,5 @@ function photoCases_(noKp) {
     return {tarikh:get(r,tarikh),masa:get(r,masa),jenis:get(r,jenis),kategori:get(r,kategori),catatan:get(r,catatan),status:get(r,status)};
   });
 }
+// Class names are compared ignoring case, spaces and hyphens so '1 AL FARABI' and '1 AL-FARABI' match.
+function classKey_(v) { return String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }

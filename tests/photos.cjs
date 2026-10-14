@@ -27,4 +27,9 @@ caseRows.push(['3','090101-01-0001','2026-02-01','','MURID UJIAN','1 AL FARABI',
 assert.equal(call({action:'photo_cases',noKp:roster[0].noKp}).cases.length,2);
 assert.throws(()=>call({action:'photo_cases',noKp:'unknown'}),/tidak ditemui/);
 assert.throws(()=>call({action:'photo_cases',noKp:roster[0].noKp,photoToken:'wrong'}),/tidak sah/);
+assert.equal(Object.keys(call({action:'photo_list',kelas:'1 al-farabi'}).photos).length,0);
+context.DriveApp.getFileById=()=>({getBlob:()=>({getBytes:()=>[255,216,255,217]}),setTrashed:()=>{}});
+properties.set('photo_'+roster[0].noKp,'photo');
+assert(call({action:'photo_list',kelas:'1 AL-FARABI'}).photos[roster[0].noKp],'class name must match ignoring hyphen/case');
+properties.delete('photo_'+roster[0].noKp);
 console.log('PASS: token enforcement, trimmed headers, leading-zero ID, membership, JPEG and size validation, class isolation, save/list/delete and lock release.');
