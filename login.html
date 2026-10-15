@@ -56,6 +56,48 @@
       grid-template-columns: 1fr;
       gap: 8px;
     }
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tabs button {
+      background: #ffffff;
+      color: #0f766e;
+      border-color: #c3ded9;
+    }
+    .tabs button[aria-selected="true"] {
+      background: #0f766e;
+      color: #ffffff;
+      border-color: #0f766e;
+    }
+    .field {
+      margin: 0 0 10px;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #0f3344;
+    }
+    .field input {
+      width: 100%;
+      border: 1px solid #b8cfdb;
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+    }
+    .field small {
+      display: block;
+      margin-top: 4px;
+      color: #475569;
+    }
+    .status[data-state="error"] {
+      border-color: #fecaca;
+      background: #fef2f2;
+      color: #b91c1c;
+    }
     .password-wrap {
       margin: 10px 0 6px;
     }
@@ -85,17 +127,39 @@
 <body>
   <section class="login-card">
     <img class="logo" src="icons/logo-sekolah.png" alt="Logo myDisiplin" />
-    <h1 class="title">Log Masuk myDisiplin</h1>
-    <p class="muted">Akses sistem menggunakan kod akses sahaja. Data disimpan pada peranti ini.</p>
-    <div class="password-wrap">
-      <label for="shared-password">Kod Akses</label>
-      <input id="shared-password" type="password" autocomplete="current-password" placeholder="Masukkan kod akses" />
+    <h1 class="title">myDisiplin</h1>
+    <p class="muted">Log masuk dengan akaun guru anda. Guru baharu boleh mendaftar sendiri.</p>
+    <div class="tabs" role="tablist">
+      <button id="tab-login" type="button" role="tab" aria-selected="true">Log Masuk</button>
+      <button id="tab-register" type="button" role="tab" aria-selected="false">Daftar Akaun</button>
     </div>
-    <div class="action-row">
-      <button id="signin-btn" type="button">Login</button>
-    </div>
-    <p class="muted" style="margin-top:10px">Login akan disimpan pada peranti ini selepas kod akses disahkan.</p>
-    <div id="login-status" class="status">Sedia untuk pengesahan kod akses.</div>
+
+    <form id="login-form" autocomplete="on">
+      <div class="field"><label for="login-username">Username</label>
+        <input id="login-username" name="username" type="text" autocomplete="username" autocapitalize="none" required /></div>
+      <div class="field"><label for="login-password">Kata Laluan</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required /></div>
+      <div class="action-row"><button type="submit">Log Masuk</button></div>
+    </form>
+
+    <form id="register-form" autocomplete="on" hidden>
+      <div class="field"><label for="reg-nama">Nama penuh</label>
+        <input id="reg-nama" name="nama" type="text" autocomplete="name" minlength="3" maxlength="80" required /></div>
+      <div class="field"><label for="reg-username">Username</label>
+        <input id="reg-username" name="username" type="text" autocomplete="username" autocapitalize="none" pattern="[a-zA-Z0-9._]{3,30}" title="3-30 aksara: huruf, nombor, titik atau garis bawah" required />
+        <small>Huruf, nombor, titik atau garis bawah (3-30 aksara).</small></div>
+      <div class="field"><label for="reg-password">Kata laluan</label>
+        <input id="reg-password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required />
+        <small>Sekurang-kurangnya 8 aksara.</small></div>
+      <div class="field"><label for="reg-password2">Sahkan kata laluan</label>
+        <input id="reg-password2" name="password2" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></div>
+      <div class="field"><label for="reg-kod">Kod pendaftaran sekolah</label>
+        <input id="reg-kod" name="kodDaftar" type="password" autocomplete="off" required />
+        <small>Dapatkan kod ini daripada pentadbir sekolah.</small></div>
+      <div class="action-row"><button type="submit">Daftar &amp; Log Masuk</button></div>
+    </form>
+
+    <div id="login-status" class="status" role="status" aria-live="polite"></div>
   </section>
 
   <script src="assets/auth.js"></script>

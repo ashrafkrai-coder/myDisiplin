@@ -1,9 +1,7 @@
-// These actions use a server-side access token and private Drive files.
+// Photo actions require a valid teacher session (see Auth.gs) and use private Drive files.
 function handlePhotoAction_(payload) {
+  requireSession_(payload);
   var props = PropertiesService.getScriptProperties();
-  var secret = props.getProperty('PHOTO_ACCESS_TOKEN');
-  if (!secret || secret.length < 24) throw new Error('Pentadbir perlu tetapkan PHOTO_ACCESS_TOKEN sekurang-kurangnya 24 aksara dalam Script Properties.');
-  if (String(payload.photoToken || '') !== secret) throw new Error('Kod akses foto tidak sah.');
   if (payload.action === 'photo_batch') {
     // Fast path: no roster read. Only 12-digit IDs that already have a stored photo are returned.
     var batch = {};

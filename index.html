@@ -313,23 +313,6 @@
       overflow-wrap: anywhere;
     }
 
-    .photo-hint {
-      margin: 0 0 12px;
-      font-size: 13px;
-      color: var(--ios-label3);
-    }
-
-    .photo-hint button {
-      font: inherit;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--ios-separator);
-      background: var(--ios-surface);
-      color: var(--ios-accent);
-      font-weight: 600;
-      cursor: pointer;
-    }
-
     .student-title {
       margin: 0 0 4px;
       font-size: 17px;
@@ -540,7 +523,6 @@
       };
       let deferredPrompt;
       setInstallStatus("tekan butang Install Aplikasi");
-      const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
       const SHEET_TAB = "data";
       const CASES_TAB = "Rekod kes baru";
       let students = [];
@@ -620,10 +602,7 @@
           return;
         }
 
-        const hint = photoToken()
-          ? ""
-          : '<p class="photo-hint">Foto murid tidak dipaparkan. <button type="button" data-act="photo-token">Masukkan kod akses foto</button></p>';
-        searchOutput.innerHTML = hint + list
+        searchOutput.innerHTML = list
           .map((student) => {
             const studentNameKey = normalizeName(student.nama);
             const matchedCases = caseRecords.filter((item) => normalizeName(item.nama) === studentNameKey);
@@ -656,15 +635,9 @@
         loadPhotos();
       }
 
-      // ── Student photos (private; fetched with the photo access code) ──
-      const PHOTO_ENDPOINT = "https://script.google.com/macros/s/AKfycbxEt9OP-SO8k6VquhFT0wrRRWM26-ohEk9hzdiR68EAG4FjmnmqM1mUfHqzjkByEOu7/exec";
-      const PHOTO_TOKEN_KEY = "mydisiplin_photo_token";
+      // ── Student photos (private; fetched with the teacher session) ──
       const photoCache = {};
       const photoPending = new Set();
-
-      function photoToken() {
-        try { return sessionStorage.getItem(PHOTO_TOKEN_KEY) || ""; } catch (e) { return ""; }
-      }
 
       function photoKey(noKp) {
         const digits = String(noKp || "").replace(/[^0-9]/g, "");
@@ -691,9 +664,7 @@
         });
       }
 
-      async function loadPhotos() {
-        const token = photoToken();
-        if (!token) return;
+      function loadPhotos() {
         const wanted = Array.from(searchOutput.querySelectorAll("span.student-photo[data-nokp]"))
           .map((el) => el.dataset.nokp)
           .filter((id) => id && !(id in photoCache) && !photoPending.has(id));
@@ -702,14 +673,8 @@
         applyPhotos();
         for (let i = 0; i < ids.length; i += 8) {
           const noKps = ids.slice(i, i + 8);
-          fetch(PHOTO_ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "photo_batch", photoToken: token, noKps })
-          })
-            .then((response) => response.json())
+          window.myDisiplinAuth.call("photo_batch", { noKps })
             .then((result) => {
-              if (!result.ok) throw new Error(result.error || "photo_batch gagal");
               noKps.forEach((id) => { photoCache[id] = (result.photos && result.photos[id]) || ""; });
               applyPhotos();
             })
@@ -718,28 +683,13 @@
         }
       }
 
-      searchOutput.addEventListener("click", (event) => {
-        const button = event.target.closest('[data-act="photo-token"]');
-        if (!button) return;
-        const token = window.prompt("Kod akses foto (PHOTO_ACCESS_TOKEN):");
-        if (!token || !token.trim()) return;
-        try { sessionStorage.setItem(PHOTO_TOKEN_KEY, token.trim()); } catch (e) { return; }
-        button.closest(".photo-hint").remove();
-        loadPhotos();
-      });
-
       async function loadStudentsFromSheet() {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_TAB)}&tqx=out:json`;
-        searchOutput.innerHTML = "<p>Memuat data pelajar dari Google Sheet...</p>";
+        searchOutput.innerHTML = "<p>Memuat data pelajar...</p>";
 
         try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error("Gagal akses sheet");
-          const text = await response.text();
-          const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-          const parsed = JSON.parse(jsonText);
-          const rows = parsed.table.rows || [];
-          const headers = (parsed.table.cols || []).map((col) => col.label || col.id || "");
+          const table = await window.myDisiplinAuth.sheetTable(SHEET_TAB);
+          const rows = table.rows;
+          const headers = table.headers;
 
           const nameCol = findColumnIndex(headers, ["nama", "namamurid", "murid", "namapelajar"]);
           const noKpCol = findColumnIndex(headers, ["nokp", "nokadpengenalan", "ic", "nokad"]);
@@ -761,22 +711,15 @@
 
           searchOutput.innerHTML = "<p>Sila masukkan maklumat pelajar untuk membuat carian.</p>";
         } catch (error) {
-          searchOutput.innerHTML =
-            "<p>Gagal memuat data dari Google Sheet. Pastikan sheet boleh diakses (publish/share) dan cuba semula.</p>";
+          searchOutput.innerHTML = `<p>Gagal memuat data pelajar: ${escapeHtml(error.message)}</p>`;
         }
       }
 
       async function loadCaseRecordsFromSheet() {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(CASES_TAB)}&tqx=out:json`;
-
         try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error("Gagal akses tab rekod kes");
-          const text = await response.text();
-          const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-          const parsed = JSON.parse(jsonText);
-          const rows = parsed.table.rows || [];
-          const headers = (parsed.table.cols || []).map((col) => col.label || col.id || "");
+          const table = await window.myDisiplinAuth.sheetTable(CASES_TAB);
+          const rows = table.rows;
+          const headers = table.headers;
 
           const namaCol = findColumnIndex(headers, ["nama", "namamurid", "murid", "namapelajar"]);
           const tarikhCol = findColumnIndex(headers, ["tarikh", "date"]);

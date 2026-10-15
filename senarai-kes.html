@@ -480,9 +480,7 @@
   <script>
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
-    const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
     const SHEET_TAB = "Rekod kes baru";
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxEt9OP-SO8k6VquhFT0wrRRWM26-ohEk9hzdiR68EAG4FjmnmqM1mUfHqzjkByEOu7/exec";
     const container = document.getElementById("list-container");
     const filterNamaEl = document.getElementById("filter-nama");
     const filterKategoriEl = document.getElementById("filter-kategori");
@@ -641,39 +639,17 @@
     }
 
     async function updateStatusInSheet(rowNumber, status) {
-      if (!GAS_ENDPOINT) return false;
-      const endpointUrl = new URL(GAS_ENDPOINT);
-      endpointUrl.searchParams.set("sheetId", SHEET_ID);
-      endpointUrl.searchParams.set("tab", SHEET_TAB);
-
-      const payload = {
-        action: "update_status",
-        sheetId: SHEET_ID,
-        tab: SHEET_TAB,
-        rowNumber,
-        status
-      };
-
-      const response = await fetch(endpointUrl.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      return response.ok;
+      await window.myDisiplinAuth.call("update_status", { rowNumber, status });
+      return true;
     }
 
     async function loadKesFromSheet() {
-      container.innerHTML = "<div class='empty'>Memuat rekod kes dari Google Sheet...</div>";
+      container.innerHTML = "<div class='empty'>Memuat rekod kes...</div>";
 
       try {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(SHEET_TAB)}&tqx=out:json`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Gagal akses tab Rekod kes baru");
-        const text = await response.text();
-        const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-        const parsed = JSON.parse(jsonText);
-        const rows = parsed.table.rows || [];
-        const headers = (parsed.table.cols || []).map((col) => col.label || col.id || "");
+        const table = await window.myDisiplinAuth.sheetTable(SHEET_TAB);
+        const rows = table.rows;
+        const headers = table.headers;
 
         const idCol = findColumnIndex(headers, ["id"]);
         const noKpCol = findColumnIndex(headers, ["nokp", "nokadpengenalan", "nokad", "no_kp"]);
@@ -705,8 +681,8 @@
 
         populateKategoriOptions(latestRows);
         applyFilters();
-      } catch {
-        container.innerHTML = "<div class='empty'>Gagal memuat rekod kes dari Google Sheet.</div>";
+      } catch (error) {
+        container.innerHTML = `<div class='empty'>Gagal memuat rekod kes: ${escapeHtml(error.message)}</div>`;
       }
     }
 
@@ -730,7 +706,7 @@
         .catch(() => {
           target.checked = !target.checked;
           target.disabled = false;
-          container.insertAdjacentHTML("afterbegin", "<div class='empty'>Status gagal dikemas kini ke Google Sheet.</div>");
+          container.insertAdjacentHTML("afterbegin", "<div class='empty'>Status gagal dikemas kini.</div>");
         });
     });
 

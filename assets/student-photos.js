@@ -3,25 +3,16 @@
   'use strict';
   const root = document.getElementById('student-photo-picker');
   if (!root) return;
-  const endpoint = 'https://script.google.com/macros/s/AKfycbxEt9OP-SO8k6VquhFT0wrRRWM26-ohEk9hzdiR68EAG4FjmnmqM1mUfHqzjkByEOu7/exec';
   // Must match the KELAS values in the sheet exactly; the server filters by exact name.
   const CLASSES = ['1 AL-FARABI','1 AMANAH','1 BAKTI','1 CEKAL','1 DAMAI','1 GIGIH','1 HORMAT','1 IKHLAS','1 JUJUR','2 AL-FARABI','2 AMANAH','2 BAKTI','2 CEKAL','2 DAMAI','2 GIGIH','2 HORMAT','2 IKHLAS','2 JUJUR','3 AL-FARABI','3 AMANAH','3 BAKTI','3 CEKAL','3 DAMAI','3 GIGIH','3 HORMAT','3 IKHLAS','3 JUJUR','4 AMANAH','4 BAKTI','4 CEKAL','4 DAMAI','4 GIGIH','4 HORMAT','4 IKHLAS','4 JUJUR','4 PVMA','5 AMANAH','5 BAKTI','5 CEKAL','5 DAMAI','5 GIGIH','5 HORMAT','5 IKHLAS','5 JUJUR','5 PVMA'];
   const key = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   let students = [], photos = {}, selected = null, generation = 0;
-  root.innerHTML = `<section class="photo-panel"><h2>Pilih murid mengikut kelas</h2><div class="photo-controls"><label>Kelas<select id="photo-class"><option value="">Pilih kelas dahulu</option></select></label><label>Cari nama<input id="photo-search" type="search" placeholder="Nama murid"></label><button id="photo-connect" type="button">Sambung / tukar kod akses foto</button></div><p id="photo-status" class="photo-status" role="status"></p><div id="photo-grid" class="photo-grid"></div><div id="photo-selected"></div></section>`;
+  root.innerHTML = `<section class="photo-panel"><h2>Pilih murid mengikut kelas</h2><div class="photo-controls"><label>Kelas<select id="photo-class"><option value="">Pilih kelas dahulu</option></select></label><label>Cari nama<input id="photo-search" type="search" placeholder="Nama murid"></label></div><p id="photo-status" class="photo-status" role="status"></p><div id="photo-grid" class="photo-grid"></div><div id="photo-selected"></div></section>`;
   const $ = id => document.getElementById(id);
   const classEl = $('photo-class'), status = $('photo-status'), grid = $('photo-grid');
   CLASSES.forEach(c => classEl.add(new Option(c, c)));
   const dialog = document.createElement('dialog'); dialog.className = 'profile-dialog'; document.body.append(dialog);
-  async function api(action, data = {}) {
-    const token = sessionStorage.getItem('mydisiplin_photo_token');
-    if (!token) throw new Error('Tekan Sambung dan masukkan kod akses foto yang ditetapkan dalam Apps Script.');
-    const response = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action, photoToken:token, ...data})});
-    if (!response.ok) throw new Error('Sambungan gagal. Cuba semula.');
-    const result = await response.json();
-    if (!result.ok) throw new Error(result.error || 'Apps Script perlu dikemas kini untuk fungsi foto.');
-    return result;
-  }
+  const api = (action, data = {}) => window.myDisiplinAuth.call(action, data);
   function avatar(student, size) {
     const el = photos[student.noKp] ? document.createElement('img') : document.createElement('span');
     el.className = 'student-avatar';
@@ -158,16 +149,9 @@
       classEl.value=Array.from(classEl.options).find(o=>key(o.value)===key(previous))?.value||'';await loadClass();
     }catch(e){students=[];photos={};clearSelection();status.textContent=e.message;}
   }
-  function askToken() {
-    const token=prompt('Kod akses foto (PHOTO_ACCESS_TOKEN dalam Apps Script):');
-    if(!token?.trim())return false;
-    sessionStorage.setItem('mydisiplin_photo_token',token.trim());return true;
-  }
-  $('photo-connect').onclick=()=>{if(askToken())connect();};
-  // The class list is built in, so the dropdown works at once; ask for the access code only when first needed.
+  // The class list is built in, so the dropdown works at once; the roster loads in the background.
   classEl.onchange=()=>{
     if(!classEl.value){loadClass();return;}
-    if(!sessionStorage.getItem('mydisiplin_photo_token') && !askToken()){status.textContent='Kod akses foto diperlukan untuk memuatkan murid.';return;}
     if(students.length)loadClass();else connect();
   };$('photo-search').oninput=render;
   // Capture phase prevents the existing save handler from recording an unconfirmed or changed identity.

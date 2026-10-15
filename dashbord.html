@@ -334,7 +334,6 @@
   <script>
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
-    const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
     const STUDENT_TAB = "data";
     const CASE_TAB = "Rekod kes baru";
     const jumlahMuridEl = document.getElementById("jumlah-murid");
@@ -352,16 +351,7 @@
     }
 
     async function fetchSheetRows(tabName) {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(tabName)}&tqx=out:json`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Gagal akses tab ${tabName}`);
-      const text = await response.text();
-      const jsonText = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-      const parsed = JSON.parse(jsonText);
-      return {
-        rows: parsed.table.rows || [],
-        headers: (parsed.table.cols || []).map((col) => col.label || col.id || "")
-      };
+      return window.myDisiplinAuth.sheetTable(tabName);
     }
 
     function parseDateValue(value) {
@@ -463,7 +453,7 @@
         kesBulanIniEl.textContent = "0";
         kesSelesaiEl.textContent = "0";
         kesSemakanEl.textContent = "0";
-        kemaskiniEl.textContent = "Gagal memuat data dari Google Sheet.";
+        kemaskiniEl.textContent = "Gagal memuat data: " + (error && error.message ? error.message : "ralat tidak diketahui");
       }
     }
 

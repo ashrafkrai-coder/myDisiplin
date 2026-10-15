@@ -481,9 +481,7 @@
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
     const STORAGE_KEY = "mydisiplin_kes";
-    const SHEET_ID = "1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs";
     const SHEET_TAB = "Rekod kes baru";
-    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxEt9OP-SO8k6VquhFT0wrRRWM26-ohEk9hzdiR68EAG4FjmnmqM1mUfHqzjkByEOu7/exec";
 
     const namaEl = document.getElementById("nama");
     const noKpEl = document.getElementById("nokp");
@@ -558,29 +556,11 @@
     }
 
     async function sendToGoogleSheet(record) {
-      if (!GAS_ENDPOINT) return { ok: false, error: "GAS_ENDPOINT belum diisi." };
-
-      const endpointUrl = new URL(GAS_ENDPOINT);
-      endpointUrl.searchParams.set("sheetId", SHEET_ID);
-      endpointUrl.searchParams.set("tab", SHEET_TAB);
-
-      const payload = { ...record, sheetId: SHEET_ID, tab: SHEET_TAB };
-
       try {
-        const response = await fetch(endpointUrl.toString(), {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          let bodyText = "";
-          try { bodyText = (await response.text()).trim(); } catch {}
-          return { ok: false, error: bodyText ? `HTTP ${response.status}: ${bodyText}` : `HTTP ${response.status} ${response.statusText}` };
-        }
+        await window.myDisiplinAuth.call("append", record);
         return { ok: true, error: "" };
       } catch (error) {
-        return { ok: false, error: error?.message || "Ralat rangkaian/CORS." };
+        return { ok: false, error: error?.message || "Ralat rangkaian." };
       }
     }
 
@@ -636,9 +616,7 @@
       setProgress(100,
         sent
           ? "Rekod berjaya disimpan dan dihantar ke Google Sheet."
-          : GAS_ENDPOINT
-            ? `Rekod disimpan dalam aplikasi, tetapi penghantaran ke Google Sheet gagal. Sebab: ${syncResult.error || "Tidak diketahui"}.`
-            : "Rekod disimpan dalam aplikasi. Sila isi URL Apps Script pada GAS_ENDPOINT.",
+          : `Rekod disimpan dalam aplikasi, tetapi penghantaran ke Google Sheet gagal. Sebab: ${syncResult.error || "Tidak diketahui"}.`,
         sent ? "success" : "error"
       );
 
