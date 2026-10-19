@@ -6,10 +6,10 @@
   // Must match the KELAS values in the sheet exactly; the server filters by exact name.
   const CLASSES = ['1 AL-FARABI','1 AMANAH','1 BAKTI','1 CEKAL','1 DAMAI','1 GIGIH','1 HORMAT','1 IKHLAS','1 JUJUR','2 AL-FARABI','2 AMANAH','2 BAKTI','2 CEKAL','2 DAMAI','2 GIGIH','2 HORMAT','2 IKHLAS','2 JUJUR','3 AL-FARABI','3 AMANAH','3 BAKTI','3 CEKAL','3 DAMAI','3 GIGIH','3 HORMAT','3 IKHLAS','3 JUJUR','4 AMANAH','4 BAKTI','4 CEKAL','4 DAMAI','4 GIGIH','4 HORMAT','4 IKHLAS','4 JUJUR','4 PVMA','5 AMANAH','5 BAKTI','5 CEKAL','5 DAMAI','5 GIGIH','5 HORMAT','5 IKHLAS','5 JUJUR','5 PVMA'];
   const key = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  let students = [], photos = {}, selected = null, generation = 0;
-  root.innerHTML = `<section class="photo-panel"><h2>Pilih murid mengikut kelas</h2><div class="photo-controls"><label>Kelas<select id="photo-class"><option value="">Pilih kelas dahulu</option></select></label><label>Cari nama<input id="photo-search" type="search" placeholder="Nama murid"></label></div><p id="photo-status" class="photo-status" role="status"></p><div id="photo-grid" class="photo-grid"></div><div id="photo-selected"></div></section>`;
+  let students = [], photos = {}, selected = null, generation = 0, loadedKey = null;
+  root.innerHTML = `<section class="photo-panel"><details id="photo-menu"${root.dataset.open === 'true' ? ' open' : ''}><summary>Foto murid (pilih mengikut kelas)</summary><div class="photo-controls"><label>Kelas<select id="photo-class"><option value="">Pilih kelas dahulu</option></select></label><label>Cari nama<input id="photo-search" type="search" placeholder="Nama murid"></label></div><p id="photo-status" class="photo-status" role="status"></p><div id="photo-grid" class="photo-grid"></div></details><div id="photo-selected"></div></section>`;
   const $ = id => document.getElementById(id);
-  const classEl = $('photo-class'), status = $('photo-status'), grid = $('photo-grid');
+  const menu = $('photo-menu'), classEl = $('photo-class'), status = $('photo-status'), grid = $('photo-grid');
   CLASSES.forEach(c => classEl.add(new Option(c, c)));
   const dialog = document.createElement('dialog'); dialog.className = 'profile-dialog'; document.body.append(dialog);
   const api = (action, data = {}) => window.myDisiplinAuth.call(action, data);
@@ -98,7 +98,7 @@
     const msg=document.createElement('p');msg.setAttribute('role','status');
     const actions=document.createElement('div');actions.className='profile-actions';
     const choose=document.createElement('button');choose.type='button';choose.textContent='Pilih murid ini';
-    choose.hidden=!$('nama');choose.onclick=()=>{selectStudent(student);dialog.close();};
+    choose.hidden=!$('nama');choose.onclick=()=>{selectStudent(student);dialog.close();menu.open=false;};
     const file=document.createElement('input');file.type='file';file.accept='image/jpeg,image/png,image/webp';file.hidden=true;
     const camera=document.createElement('input');camera.type='file';camera.accept='image/jpeg,image/png,image/webp';camera.setAttribute('capture','user');camera.hidden=true;
     const upload=document.createElement('button');upload.type='button';upload.textContent='Muat naik / ganti foto';upload.onclick=()=>file.click();
@@ -120,9 +120,12 @@
     if(!dialog.open)dialog.showModal();
   }
   async function loadClass() {
-    const current=++generation;photos={};clearSelection();
+    const current=++generation;photos={};loadedKey=null;clearSelection();
     if(!classEl.value){status.textContent='Pilih kelas dahulu.';return;}
     if($('kelas')){const o=Array.from($('kelas').options).find(o=>key(o.value)===key(classEl.value));if(o)$('kelas').value=o.value;}
+    // Photos are fetched and shown only while the menu is open; opening it triggers the load.
+    if(!menu.open){status.textContent='Buka menu untuk melihat foto kelas.';return;}
+    loadedKey=key(classEl.value);
     status.textContent='Memuat foto kelas...';
     render();
     // Small parallel batches: cards fill in as each batch returns instead of waiting for the whole class.
@@ -154,6 +157,9 @@
     if(!classEl.value){loadClass();return;}
     if(students.length)loadClass();else connect();
   };$('photo-search').oninput=render;
+  menu.addEventListener('toggle',()=>{
+    if(menu.open && classEl.value && students.length && loadedKey!==key(classEl.value))loadClass();
+  });
   // Capture phase prevents the existing save handler from recording an unconfirmed or changed identity.
   $('simpan-btn')?.addEventListener('click',event=>{
     if(selected && (!$('photo-confirmed')?.checked || $('nokp').value!==selected.noKp || $('nama').value!==selected.nama || key($('kelas').value)!==key(selected.kelas))){

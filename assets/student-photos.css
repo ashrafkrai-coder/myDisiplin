@@ -16,3 +16,7 @@
 .case-list{margin:0 0 12px;padding-left:20px;font-size:13px;line-height:1.5;color:#0f172a}
 .case-list li{margin-bottom:8px;overflow-wrap:anywhere}
 .case-list li div{color:#475569}
+
+.photo-panel summary{cursor:pointer;font-weight:700;font-size:16px;color:#0f766e;padding:2px 0}
+.photo-panel details[open] summary{margin-bottom:12px}
+#photo-selected:not(:empty){margin-top:12px}
