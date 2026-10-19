@@ -764,6 +764,18 @@
 
       Promise.all([loadStudentsFromSheet(), loadCaseRecordsFromSheet()]).catch(() => {});
 
+      // Once installed (or when already running as the installed app) the install button is not needed.
+      const hideInstall = () => {
+        installBtn.hidden = true;
+        installBtn.style.display = "none";
+        setInstallStatus("");
+      };
+      const isInstalledApp = () =>
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia("(display-mode: window-controls-overlay)").matches ||
+        window.navigator.standalone === true;
+      if (isInstalledApp()) hideInstall();
+
       window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         deferredPrompt = event;
@@ -785,15 +797,15 @@
           return;
         }
         deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
+        const choice = await deferredPrompt.userChoice;
         deferredPrompt = null;
-        setInstallStatus("prompt sudah dipaparkan");
+        if (choice && choice.outcome === "accepted") hideInstall();
+        else setInstallStatus("pemasangan dibatalkan");
       });
 
       window.addEventListener("appinstalled", () => {
-        installBtn.disabled = true;
-        installBtn.textContent = "Aplikasi Dipasang";
-        setInstallStatus("sudah dipasang");
+        deferredPrompt = null;
+        hideInstall();
       });
 
       if (!("serviceWorker" in navigator)) {
