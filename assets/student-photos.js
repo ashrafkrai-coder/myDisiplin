@@ -40,7 +40,7 @@
     if (classEl.value && !list.length) grid.textContent='Tiada murid sepadan.';
   }
   function selectStudent(student) {
-    selected=student; $('nama').value=student.nama; $('nokp').value=student.noKp;
+    selected=student; $('nama').value=student.nama; $('nokp').value=student.noKp; $('nokp').dispatchEvent(new Event('change'));
     const option=Array.from($('kelas').options).find(o=>key(o.value)===key(student.kelas));
     if(option) $('kelas').value=option.value;
     const box=$('photo-selected');box.replaceChildren(avatar(student));

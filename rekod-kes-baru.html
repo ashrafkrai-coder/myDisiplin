@@ -565,10 +565,72 @@
       }
     }
 
+    // Lateness is graded by how many times the same student has been recorded for it:
+    // 1-3 Ringan, 4-15 Sederhana, 16+ Berat (the new record counts as the next occurrence).
+    const LATE_TYPE = "TINGKAH LAKU TIDAK PENTINGKAN MASA";
+    const digitsOnly = (value) => Array.from(String(value || "")).filter((c) => c >= "0" && c <= "9").join("");
+    const lateLevel = (count) => (count <= 3 ? "Ringan" : count <= 15 ? "Sederhana" : "Berat");
+    let autoSeq = 0;
+
+    async function countPriorLate(noKp) {
+      const table = await window.myDisiplinAuth.sheetTable(SHEET_TAB);
+      const headers = table.headers.map((h) => String(h).trim().toLowerCase());
+      const kpCol = headers.indexOf("no_kp");
+      const jenisCol = headers.indexOf("jenis_kesalahan");
+      if (kpCol < 0 || jenisCol < 0) return 0;
+      const key = digitsOnly(noKp);
+      return table.rows.filter((row) => {
+        const cells = row.c || [];
+        const kp = cells[kpCol] && cells[kpCol].v != null ? String(cells[kpCol].v) : "";
+        const jenis = cells[jenisCol] && cells[jenisCol].v != null ? String(cells[jenisCol].v) : "";
+        return digitsOnly(kp) === key && jenis.trim().toUpperCase() === LATE_TYPE;
+      }).length;
+    }
+
+    // Returns the category for a lateness record, or null when it does not apply.
+    async function autoKategori() {
+      const seq = ++autoSeq;
+      const isLate = jenisKesalahanEl.value === LATE_TYPE;
+      kategoriEl.disabled = isLate;
+      if (!isLate) return null;
+      if (!digitsOnly(noKpEl.value)) {
+        kategoriEl.value = "Ringan";
+        return "Ringan";
+      }
+      const prior = await countPriorLate(noKpEl.value);
+      const level = lateLevel(prior + 1);
+      if (seq === autoSeq) {
+        kategoriEl.value = level;
+        statusEl.className = "";
+        statusEl.textContent = "Kali ke-" + (prior + 1) + " lewat/tidak pentingkan masa: kategori " + level + ".";
+      }
+      return level;
+    }
+
+    function refreshAutoKategori() {
+      autoKategori().catch(() => {
+        if (jenisKesalahanEl.value === LATE_TYPE) kategoriEl.value = "Ringan";
+      });
+    }
+    jenisKesalahanEl.addEventListener("change", refreshAutoKategori);
+    noKpEl.addEventListener("change", () => { if (jenisKesalahanEl.value === LATE_TYPE) refreshAutoKategori(); });
+
     simpanBtn.addEventListener("click", async () => {
       if (simpanBtn.disabled) return;
       simpanBtn.disabled = true;
       setProgress(5, "Memproses rekod...", "loading");
+
+      if (jenisKesalahanEl.value === LATE_TYPE && digitsOnly(noKpEl.value)) {
+        try {
+          await autoKategori();
+        } catch (error) {
+          statusEl.textContent = "Tidak dapat mengira bilangan kes lewat: " + (error?.message || "ralat rangkaian") + ". Cuba lagi.";
+          statusEl.className = "error";
+          simpanBtn.disabled = false;
+          resetProgress();
+          return;
+        }
+      }
 
       const nama = namaEl.value.trim();
       const noKp = noKpEl.value.trim();
@@ -613,6 +675,7 @@
       jenisKesalahanEl.selectedIndex = 0;
       catatanEl.value = "";
       kategoriEl.selectedIndex = 0;
+      kategoriEl.disabled = false;
 
       setProgress(100,
         sent

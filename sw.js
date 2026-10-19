@@ -1,4 +1,4 @@
-const APP_VERSION = "v44";
+const APP_VERSION = "v45";
 const STATIC_CACHE = `mydisiplin-static-${APP_VERSION}`;
 const RUNTIME_CACHE = `mydisiplin-runtime-${APP_VERSION}`;
 const STATIC_ASSETS = [
