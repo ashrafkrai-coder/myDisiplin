@@ -1,0 +1,52 @@
+/* Desktop / tablet-landscape layout. Phones (under 900px) keep the existing single-column design. */
+@media (min-width: 900px) {
+  html body main { width: min(1120px, 100%); padding: 28px 32px 64px; }
+  html body main[style] { max-width: 1120px !important; padding: 28px 32px 64px !important; }
+
+  .hero { padding: 26px 30px; margin-bottom: 24px; }
+  .hero-text h1 { font-size: 34px; }
+  .hero-text p { font-size: 14px; }
+  .hero-logo { width: 76px; height: 76px; }
+
+  /* Page navigation: four tabs on one row */
+  .quick-links, .menu { grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
+  .quick-links a, .menu a { padding: 16px 12px; font-size: 15px; }
+  .quick-links a:hover, .menu a:hover { background: rgba(0,122,255,.08); }
+
+  /* Home: search form on one row, results in two columns */
+  .search-grid { grid-template-columns: repeat(3, 1fr) auto; gap: 14px; align-items: center; padding: 14px 20px 6px; }
+  .search-grid input, .search-grid input:last-of-type {
+    border: 1px solid var(--ios-separator); border-radius: 10px; padding: 13px 14px;
+  }
+  .search-grid button[type="submit"] { width: auto; margin: 0; padding: 14px 28px; }
+  .search-panel h2 { padding: 18px 20px 0; }
+  .search-result { padding: 18px 20px; }
+  #search-output { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  #search-output > p { grid-column: 1 / -1; }
+  #search-output .student-item { margin-bottom: 0; }
+  .actions { flex-direction: row; justify-content: center; }
+  .actions button { width: auto; min-width: 220px; }
+
+  /* New record: two-column form, wide student picker */
+  .form-card { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .form-card .field-row:last-child { grid-column: 1 / -1; }
+  #simpan-btn { max-width: 360px; display: block; margin-left: auto; margin-right: auto; }
+  .photo-panel { padding: 20px 24px; }
+  .photo-controls { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .photo-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+  .photo-card { font-size: 13px !important; }
+  .student-avatar { width: 92px; height: 92px; }
+  .profile-dialog { width: min(520px, 70vw); }
+
+  /* Case list: cards in two columns */
+  .kes-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  .toolbar { grid-template-columns: repeat(3, 1fr); column-gap: 24px; }
+
+  /* Dashboard: four stat cards across */
+  .grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+}
+
+@media (min-width: 1280px) {
+  .kes-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #search-output { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

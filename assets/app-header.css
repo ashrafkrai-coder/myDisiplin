@@ -3,7 +3,8 @@
 .hero-text{flex:1 1 auto;min-width:0;order:1;position:relative;z-index:1}
 .hero-text h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#fff;line-height:1.1}
 .hero-text p{margin:5px 0 0;font-size:12px;font-weight:400;color:rgba(255,255,255,.6);line-height:1.4}
-.hero-logo{width:58px;height:58px;object-fit:contain;flex:0 0 auto;order:2;margin-left:auto;border-radius:14px;background:rgba(255,255,255,.1);padding:4px;position:relative;z-index:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
+.hero-logo-link{order:2;margin-left:auto;flex:0 0 auto;display:block;line-height:0;position:relative;z-index:1}
+.hero-logo{width:58px;height:58px;object-fit:contain;flex:0 0 auto;border-radius:14px;background:rgba(255,255,255,.1);padding:4px;position:relative;z-index:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
 .hero-brand{display:block;margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.65)}
 @media (max-width:390px){.hero-text h1{font-size:22px}}
 @media print{.hero-logo,.hero-brand{display:none}}
