@@ -1,4 +1,4 @@
-const APP_VERSION = "v45";
+const APP_VERSION = "v46";
 const STATIC_CACHE = `mydisiplin-static-${APP_VERSION}`;
 const RUNTIME_CACHE = `mydisiplin-runtime-${APP_VERSION}`;
 const STATIC_ASSETS = [
@@ -15,6 +15,9 @@ const STATIC_ASSETS = [
   "browserconfig.xml",
   "offline.html",
   "assets/theme.css",
+  "assets/app-header.css",
+  "assets/app-header.js",
+  "icons/logo-sekolah.png",
   "assets/auth.js",
   "assets/student-photos.js",
   "assets/student-photos.css",
