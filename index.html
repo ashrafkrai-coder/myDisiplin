@@ -627,7 +627,7 @@
                 ${caseHtml}
                 <div class="student-actions">
                   <a class="add-record-link" href="${escapeHtml(buildAddRecordUrl(student))}">Tambah Rekod Baru</a>
-                  <a class="add-record-link" href="profil-murid.html">Urus Foto Profil</a>
+                  <a class="add-record-link" href="profil-murid.html?foto=${encodeURIComponent(photoKey(student.noKp))}">Urus Foto Profil</a>
                 </div>
               </div>
             `;

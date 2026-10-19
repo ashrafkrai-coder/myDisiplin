@@ -142,14 +142,19 @@
       if(current===generation)status.textContent='Tekan foto atau nama untuk membuka profil.';
     }catch(e){if(current===generation)status.textContent=e.message;}
   }
+  // Deep link (?foto=<noKp>): jump straight to that student's class and open the profile.
+  const targetId = new URLSearchParams(location.search).get('foto');
+  if (targetId) menu.open = true;
   async function connect() {
     status.textContent='Memuat senarai murid...';grid.replaceChildren();
     try {
       const result=await api('photo_students');students=result.students;
-      const previous=classEl.value || ($('kelas')?.value ?? '');
+      const target=targetId&&students.find(s=>s.noKp===targetId||key(s.noKp)===key(targetId));
+      const previous=target?target.kelas:(classEl.value || ($('kelas')?.value ?? ''));
       const known=new Set(Array.from(classEl.options).map(o=>key(o.value)));
       [...new Set(students.map(s=>s.kelas))].filter(c=>!known.has(key(c))).sort((a,b)=>a.localeCompare(b)).forEach(c=>classEl.add(new Option(c,c)));
       classEl.value=Array.from(classEl.options).find(o=>key(o.value)===key(previous))?.value||'';await loadClass();
+      if(target&&key(classEl.value)===key(target.kelas))openProfile(target);
     }catch(e){students=[];photos={};clearSelection();status.textContent=e.message;}
   }
   // The class list is built in, so the dropdown works at once; the roster loads in the background.
