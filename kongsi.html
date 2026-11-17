@@ -1,54 +1,56 @@
 <!doctype html>
-<html lang="ms">
+<html class="ios-ui" lang="ms">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f766e" />
+  <meta name="theme-color" content="#0f2744" />
   <script src="assets/auth.js"></script>
   <script>
     if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
   </script>
   <title>myDisiplin - Terima Kongsi</title>
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="assets/theme.css" />
   <link rel="icon" href="icons/icon32.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon180.png" />
   <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(120deg, #d1fae5, #ecfeff);
-      color: #0f172a;
-      padding: 16px;
-    }
-    main {
-      width: min(92vw, 720px);
-      background: #fff;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-    }
-    h1 { margin-top: 0; color: #0f766e; }
+    .panel p { margin: 0 0 12px; font-size: var(--fs-body); color: var(--ios-label3); }
     pre {
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: 12px;
+      margin: 0;
+      background: var(--ios-fill2);
+      border-radius: var(--ios-radius-sm);
+      padding: 12px 14px;
+      font-size: var(--fs-small);
       overflow: auto;
       white-space: pre-wrap;
       word-break: break-word;
     }
-    a { color: #0f766e; text-decoration: none; font-weight: 600; }
   </style>
-<link rel="stylesheet" href="assets/dark.css" /><script src="assets/theme-toggle.js"></script>
-<link rel="stylesheet" href="assets/app-header.css" /><script src="assets/app-header.js" defer></script>
+  <link rel="stylesheet" href="assets/dark.css" /><script src="assets/theme-toggle.js"></script>
+  <link rel="stylesheet" href="assets/app-header.css" /><script src="assets/app-header.js" defer></script>
+  <link rel="stylesheet" href="assets/desktop.css" />
 </head>
 <body>
   <main>
-    <a href="index.html">&larr; Kembali ke Utama</a>
-    <h1>Data Perkongsian Diterima</h1>
-    <p>Halaman ini menerima data daripada fungsi kongsi pelayar (Web Share Target).</p>
-    <pre id="result">Tiada data diterima.</pre>
+    <div class="hero">
+      <div class="hero-text">
+        <h1>Data Perkongsian</h1>
+        <p>Data yang dikongsi dari aplikasi lain</p>
+      </div>
+    </div>
+
+    <div class="menu">
+      <a href="rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="senarai-kes.html">Senarai Kes</a>
+      <a href="dashbord.html">Dashbord</a>
+      <a href="profil-murid.html">Profil &amp; Foto Murid</a>
+    </div>
+
+    <p class="section-label">Data Diterima</p>
+    <div class="panel">
+      <p>Halaman ini menerima data daripada fungsi kongsi pelayar (Web Share Target).</p>
+      <pre id="result">Tiada data diterima.</pre>
+    </div>
   </main>
   <script>
     const params = new URLSearchParams(window.location.search);
@@ -67,5 +69,3 @@
   </script>
 </body>
 </html>
-
-

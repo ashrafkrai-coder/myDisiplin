@@ -8,10 +8,10 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#ecfeff",
-  "theme_color": "#0f766e",
+  "background_color": "#f2f2f7",
+  "theme_color": "#0f2744",
   "lang": "ms",
-  "orientation": "portrait",
+  "orientation": "any",
   "icons": [
     {
       "src": "icons/icon192.png",

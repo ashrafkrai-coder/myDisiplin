@@ -1,7 +1,6 @@
 /* Desktop / tablet-landscape layout. Phones (under 900px) keep the existing single-column design. */
 @media (min-width: 900px) {
   html body main { width: min(1120px, 100%); padding: 28px 32px 64px; }
-  html body main[style] { max-width: 1120px !important; padding: 28px 32px 64px !important; }
 
   .hero { padding: 26px 30px; margin-bottom: 24px; }
   .hero-text h1 { font-size: 34px; }

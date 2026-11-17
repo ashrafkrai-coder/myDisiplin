@@ -1,4 +1,51 @@
-<!doctype html><html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Profil Murid — myDisiplin</title><link rel="stylesheet" href="assets/theme.css"><link rel="stylesheet" href="assets/student-photos.css"><script src="assets/auth.js"></script><script>window.myDisiplinAuth.requireAuth();</script><link rel="stylesheet" href="assets/dark.css" /><script src="assets/theme-toggle.js"></script>
-<link rel="stylesheet" href="assets/app-header.css" /><script src="assets/app-header.js" defer></script>
-<link rel="stylesheet" href="assets/desktop.css" />
-</head><body><main style="max-width:640px;margin:auto;padding:16px"><h1>Profil & Foto Murid</h1><p><a href="index.html">Utama</a> · <a href="rekod-kes-baru.html">Rekod Kes Baru</a></p><p>Pilih kelas, kemudian tekan nama atau foto murid untuk mengurus foto profil.</p><div id="student-photo-picker" data-open="true"></div></main><script src="assets/student-photos.js"></script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script></body></html>
+<!doctype html>
+<html class="ios-ui" lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f2744" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="myDisiplin" />
+  <script src="assets/auth.js"></script>
+  <script>
+    if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
+  </script>
+  <title>Profil Murid — myDisiplin</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="assets/theme.css" />
+  <link rel="stylesheet" href="assets/student-photos.css" />
+  <link rel="icon" href="icons/icon32.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/icon180.png" />
+  <style>
+    .intro { margin: 0 4px 12px; font-size: 14px; line-height: 1.5; color: var(--ios-label3); }
+  </style>
+  <link rel="stylesheet" href="assets/dark.css" /><script src="assets/theme-toggle.js"></script>
+  <link rel="stylesheet" href="assets/app-header.css" /><script src="assets/app-header.js" defer></script>
+  <link rel="stylesheet" href="assets/desktop.css" />
+</head>
+<body>
+  <main>
+    <div class="hero">
+      <div class="hero-text">
+        <h1>Profil &amp; Foto Murid</h1>
+        <p>Urus foto profil murid SMK Taman Medan</p>
+      </div>
+    </div>
+
+    <div class="menu">
+      <a href="rekod-kes-baru.html">Rekod Kes Baru</a>
+      <a href="senarai-kes.html">Senarai Kes</a>
+      <a href="dashbord.html">Dashbord</a>
+      <a href="profil-murid.html" class="active">Profil &amp; Foto Murid</a>
+    </div>
+
+    <p class="intro">Pilih kelas, kemudian tekan nama atau foto murid untuk mengurus foto profil.</p>
+    <div id="student-photo-picker" data-open="true"></div>
+  </main>
+  <script src="assets/student-photos.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  </script>
+</body>
+</html>

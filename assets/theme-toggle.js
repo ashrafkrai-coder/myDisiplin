@@ -25,7 +25,7 @@
     var theme = effective();
     root.setAttribute("data-theme", theme);
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "dark" ? "#0b0b0f" : "#0f766e");
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#0b0b0f" : "#0f2744");
     if (button) {
       var toDark = theme !== "dark";
       button.textContent = toDark ? "🌙" : "☀️";

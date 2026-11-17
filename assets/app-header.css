@@ -1,10 +1,20 @@
-/* Shared myDisiplin header: same look as the hero on the home page. */
-.hero{display:flex;align-items:center;gap:14px;padding:18px;border-radius:24px;background:linear-gradient(145deg,#1c1c2e 0%,#0f2744 50%,#0a3d62 100%);box-shadow:0 8px 32px rgba(0,0,0,.28),0 2px 8px rgba(0,0,0,.2);margin-bottom:20px;position:relative;overflow:hidden}
-.hero-text{flex:1 1 auto;min-width:0;order:1;position:relative;z-index:1}
-.hero-text h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#fff;line-height:1.1}
-.hero-text p{margin:5px 0 0;font-size:12px;font-weight:400;color:rgba(255,255,255,.6);line-height:1.4}
+/* Extras for the shared header built by app-header.js. The hero itself is styled in theme.css. */
 .hero-logo-link{order:2;margin-left:auto;flex:0 0 auto;display:block;line-height:0;position:relative;z-index:1}
-.hero-logo{width:58px;height:58px;object-fit:contain;flex:0 0 auto;border-radius:14px;background:rgba(255,255,255,.1);padding:4px;position:relative;z-index:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
+.hero-logo-link .hero-logo{margin-left:0}
 .hero-brand{display:block;margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.65)}
-@media (max-width:390px){.hero-text h1{font-size:22px}}
-@media print{.hero-logo,.hero-brand{display:none}}
+/* School tagline: small line under the title, set off by a hairline. */
+.hero{flex-wrap:wrap}
+.hero>.hero-text{flex:1 1 0}
+.hero-tagline{display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;row-gap:2px;font-size:11px;font-weight:600;letter-spacing:.1px;line-height:1.4}
+.hero-tagline span{white-space:nowrap}
+.hero-tagline-dot{opacity:.6}
+.hero>.hero-tagline{order:3;flex:1 0 100%;margin:-4px 0 0;padding-top:9px;border-top:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.8);position:relative;z-index:1}
+.login-card .hero-tagline{margin:0 0 10px;column-gap:5px;letter-spacing:0;color:var(--ios-accent)}
+@media (max-width:400px){.login-card .hero-tagline{font-size:10.5px}}
+@media (max-width:379px){.hero>.hero-tagline{font-size:10px;column-gap:5px}}
+@media (min-width:900px){.hero>.hero-tagline{font-size:12.5px}}
+/* Credit footer */
+.app-credit{margin:28px 0 0;text-align:center;font-size:11px;letter-spacing:.2px;line-height:1.5;color:var(--ios-label4)}
+.app-credit-version{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;background:var(--ios-fill);color:var(--ios-label3);font-weight:600}
+body>.app-credit{margin-top:16px}
+@media print{.app-credit{color:#666}.hero-logo,.hero-brand{display:none}.hero>.hero-tagline{color:#333;border-color:#ccc}}

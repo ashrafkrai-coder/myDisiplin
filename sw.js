@@ -1,4 +1,4 @@
-const APP_VERSION = "v49";
+const APP_VERSION = "v55";
 const STATIC_CACHE = `mydisiplin-static-${APP_VERSION}`;
 const RUNTIME_CACHE = `mydisiplin-runtime-${APP_VERSION}`;
 const STATIC_ASSETS = [
@@ -8,8 +8,6 @@ const STATIC_ASSETS = [
   "rekod-kes-baru.html",
   "senarai-kes.html",
   "dashbord.html",
-  "kehadiran.html",
-  "jurnal.html",
   "kongsi.html",
   "manifest.webmanifest",
   "browserconfig.xml",
@@ -68,17 +66,32 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(staleWhileRevalidate(event.request));
 });
 
+// Pages are cached under their address without the query string, so student details passed in
+// links (e.g. rekod-kes-baru.html?nama=...&nokp=...) are never written to the device cache.
+function pageKey(request) {
+  const url = new URL(request.url);
+  url.search = "";
+  url.hash = "";
+  return url.href;
+}
+
 async function networkFirst(request) {
   try {
     const fresh = await fetch(request);
-    const cache = await caches.open(RUNTIME_CACHE);
-    cache.put(request, fresh.clone());
+    if (fresh.ok) {
+      const cache = await caches.open(RUNTIME_CACHE);
+      await cache.put(pageKey(request), fresh.clone());
+    }
     return fresh;
   } catch (error) {
-    const cached = await caches.match(request);
+    const cached = await caches.match(pageKey(request));
     if (cached) return cached;
-    return caches.match("offline.html");
+    return (await caches.match("offline.html")) || offlineResponse();
   }
+}
+
+function offlineResponse() {
+  return new Response("", { status: 503, statusText: "Offline" });
 }
 
 async function staleWhileRevalidate(request) {
@@ -91,7 +104,7 @@ async function staleWhileRevalidate(request) {
       }
       return response;
     })
-    .catch(() => cached);
+    .catch(() => cached || offlineResponse());
 
   return cached || fetchPromise;
 }

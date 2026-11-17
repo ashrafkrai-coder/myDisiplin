@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0f766e" />
+  <meta name="theme-color" content="#0f2744" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="myDisiplin" />
   <meta name="msapplication-config" content="browserconfig.xml" />
-  <meta name="msapplication-TileColor" content="#0f766e" />
+  <meta name="msapplication-TileColor" content="#0f2744" />
   <script src="assets/auth.js"></script>
   <script>
     if (window.myDisiplinAuth) window.myDisiplinAuth.requireAuth();
@@ -19,167 +19,6 @@
   <link rel="icon" href="icons/icon32.png" type="image/png" />
   <link rel="apple-touch-icon" href="icons/icon180.png" />
   <style>
-    /* ── iPhone-look Design System ── */
-    :root {
-      --ios-bg: #f2f2f7;
-      --ios-surface: #ffffff;
-      --ios-surface2: rgba(255,255,255,0.72);
-      --ios-separator: rgba(60,60,67,0.12);
-      --ios-label: #1c1c1e;
-      --ios-label2: #3a3a3c;
-      --ios-label3: #636366;
-      --ios-label4: #8e8e93;
-      --ios-accent: #007aff;
-      --ios-teal: #30b0c7;
-      --ios-green: #34c759;
-      --ios-red: #ff3b30;
-      --ios-orange: #ff9500;
-      --ios-purple: #af52de;
-      --ios-fill: rgba(120,120,128,0.12);
-      --ios-fill2: rgba(120,120,128,0.08);
-      --ios-blur: blur(24px) saturate(180%);
-      --ios-radius: 16px;
-      --ios-radius-sm: 10px;
-      --ios-radius-xs: 8px;
-      --ios-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.08);
-      --ios-shadow-md: 0 4px 24px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
-      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      font-family: var(--font);
-      background: var(--ios-bg);
-      color: var(--ios-label);
-      margin: 0;
-      padding: 0;
-      -webkit-font-smoothing: antialiased;
-      min-height: 100dvh;
-    }
-
-    main {
-      width: min(430px, 100%);
-      margin: 0 auto;
-      padding: 12px 16px 40px;
-    }
-
-    /* ── Status Bar Spacer ── */
-    body::before {
-      content: '';
-      display: block;
-      height: env(safe-area-inset-top, 0px);
-    }
-
-    /* ── Hero / App Header ── */
-    .hero {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 18px 18px;
-      border-radius: 24px;
-      background: linear-gradient(145deg, #1c1c2e 0%, #0f2744 50%, #0a3d62 100%);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.20);
-      margin-bottom: 20px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Subtle gloss overlay */
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(160deg, rgba(255,255,255,0.10) 0%, transparent 60%);
-      pointer-events: none;
-      border-radius: inherit;
-    }
-
-    /* Accent glow blob */
-    .hero::after {
-      content: '';
-      position: absolute;
-      bottom: -30px;
-      right: -20px;
-      width: 120px;
-      height: 120px;
-      background: radial-gradient(circle, rgba(0,122,255,0.35) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-logo {
-      width: 58px;
-      height: 58px;
-      object-fit: contain;
-      flex: 0 0 auto;
-      order: 2;
-      margin-left: auto;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.10);
-      padding: 4px;
-      position: relative;
-      z-index: 1;
-      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.30));
-    }
-
-    .hero-text {
-      flex: 1 1 auto;
-      min-width: 0;
-      order: 1;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-text h1 {
-      margin: 0;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      color: #ffffff;
-      line-height: 1.1;
-    }
-
-    .hero-text p {
-      margin: 5px 0 0;
-      font-size: 12px;
-      font-weight: 400;
-      color: rgba(255,255,255,0.60);
-      line-height: 1.4;
-    }
-
-    p { line-height: 1.5; }
-
-    /* ── Quick Links (iOS Tab Row) ── */
-    .quick-links {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .quick-links a {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 13px 10px;
-      background: var(--ios-surface);
-      border-radius: var(--ios-radius-sm);
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--ios-accent);
-      text-decoration: none;
-      box-shadow: var(--ios-shadow);
-      transition: background 0.15s, transform 0.10s, box-shadow 0.15s;
-      line-height: 1.3;
-      letter-spacing: -0.1px;
-    }
-
-    .quick-links a:active {
-      background: rgba(0,122,255,0.08);
-      transform: scale(0.97);
-      box-shadow: none;
-    }
 
     /* ── Section Card ── */
     .search-panel {
@@ -215,7 +54,7 @@
       border-bottom: 1px solid var(--ios-separator);
       border-radius: 0;
       padding: 13px 0;
-      font: 17px/1 var(--font);
+      font: var(--fs-input)/1 var(--font);
       color: var(--ios-label);
       background: transparent;
       outline: none;
@@ -244,7 +83,7 @@
       color: #fff;
       border: none;
       border-radius: var(--ios-radius-sm);
-      font: 17px/1 var(--font);
+      font: var(--fs-btn)/1 var(--font);
       font-weight: 600;
       letter-spacing: -0.2px;
       cursor: pointer;
@@ -265,7 +104,7 @@
 
     .search-result > p {
       margin: 0;
-      font-size: 15px;
+      font-size: var(--fs-body);
       color: var(--ios-label3);
       text-align: center;
     }
@@ -315,7 +154,7 @@
 
     .student-title {
       margin: 0 0 4px;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--ios-label);
       letter-spacing: -0.2px;
@@ -384,7 +223,7 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--ios-accent);
-      background: rgba(0,122,255,0.08);
+      background: var(--ios-accent-soft);
       border-radius: 20px;
       text-decoration: none;
       transition: background 0.15s, transform 0.10s;
@@ -416,7 +255,7 @@
       padding: 15px;
       border: none;
       border-radius: var(--ios-radius-sm);
-      font: 17px/1 var(--font);
+      font: var(--fs-btn)/1 var(--font);
       font-weight: 600;
       cursor: pointer;
       transition: opacity 0.15s, transform 0.10s;
@@ -427,7 +266,7 @@
     .actions button:first-child {
       background: var(--ios-accent);
       color: #fff;
-      box-shadow: 0 4px 14px rgba(0,122,255,0.30);
+      box-shadow: var(--shadow-accent);
     }
 
     .actions button.secondary {
@@ -441,7 +280,13 @@
       transform: scale(0.98);
     }
 
-    button[hidden] { display: none; }
+    .install-status {
+      margin: -8px 0 20px;
+      font-size: 14px;
+      color: var(--ios-label3);
+      text-align: center;
+    }
+    .install-status:empty { display: none; }
 
     code {
       background: var(--ios-fill);
@@ -449,21 +294,9 @@
       border-radius: 5px;
       font-size: 13px;
     }
-
-    /* ── Responsive ── */
-    @media (min-width: 431px) {
-      main {
-        padding-top: 24px;
-        padding-bottom: 60px;
-      }
-    }
-
-    @media (max-width: 390px) {
-      .hero-text h1 { font-size: 22px; }
-      .quick-links a { font-size: 12px; padding: 11px 8px; }
-    }
   </style>
 <link rel="stylesheet" href="assets/dark.css" /><script src="assets/theme-toggle.js"></script>
+<link rel="stylesheet" href="assets/app-header.css" /><script src="assets/app-header.js" defer></script>
 <link rel="stylesheet" href="assets/desktop.css" />
 </head>
 <body>
@@ -488,9 +321,9 @@
     <section class="search-panel" id="carian-murid">
       <h2>Carian Nama Murid</h2>
       <form id="student-search-form" class="search-grid">
-        <input id="student-name" type="text" placeholder="Masukkan nama pelajar" />
-        <input id="student-nokp" type="text" placeholder="Masukkan no kp" />
-        <input id="student-class" type="text" placeholder="Masukkan kelas" />
+        <input id="student-name" type="text" aria-label="Nama pelajar" autocomplete="off" placeholder="Masukkan nama pelajar" />
+        <input id="student-nokp" type="text" aria-label="No kad pengenalan" inputmode="numeric" autocomplete="off" placeholder="Masukkan no kp" />
+        <input id="student-class" type="text" aria-label="Kelas" autocomplete="off" placeholder="Masukkan kelas" />
         <button type="submit">Cari Pelajar</button>
       </form>
       <div id="search-output" class="search-result">
@@ -502,6 +335,7 @@
       <button id="logout-btn" class="secondary">Log Keluar</button>
       <button id="refresh-btn" class="secondary" hidden>Muat Ulang Update</button>
     </div>
+    <p id="install-status" class="install-status" role="status" aria-live="polite"></p>
   </main>
 
   <script>
@@ -523,7 +357,6 @@
         if (swStatusEl) swStatusEl.textContent = message;
       };
       let deferredPrompt;
-      setInstallStatus("tekan butang Install Aplikasi");
       const SHEET_TAB = "data";
       const CASES_TAB = "Rekod kes baru";
       let students = [];
@@ -780,7 +613,7 @@
       window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();
         deferredPrompt = event;
-        setInstallStatus("sedia dipasang");
+        setInstallStatus("");
       });
 
       installBtn.addEventListener("click", async () => {

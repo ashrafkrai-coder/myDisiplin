@@ -3,7 +3,7 @@
 ## Status semasa
 - Manifest lengkap dengan ikon PNG + SVG, `shortcuts`, dan `screenshots`.
 - Service worker sudah guna strategi cache pengeluaran (`network-first` + `stale-while-revalidate`).
-- Halaman utama menyokong pautan `/?view=kehadiran` dan `/?view=jurnal`.
+- Ujian PWA automatik: `node tests/pwa.cjs` (manifest, ikon, service worker, semakan halaman).
 
 ## Cara uji di komputer ini
 Mesin ini belum ada `node`, `npm`, dan `python`, jadi jalankan selepas salah satu runtime dipasang.
