@@ -54,7 +54,6 @@
   }
   if (!isFormPage) { fillForms(); fillClasses(''); }
 
-  const dialog = document.createElement('dialog'); dialog.className = 'profile-dialog'; document.body.append(dialog);
 
   function badge(student) {
     const el = document.createElement('span');
@@ -121,39 +120,272 @@
     render();
   }
 
-  // Profile dialog: name, IC, class and every discipline record. Staff roles only (server-enforced).
+  // ── Profile card (profil-murid.html) ──────────────────────────────────────────────
+  // Shown on the page under the search when a name is chosen. Staff roles only (server-enforced).
+  const el = (tag, cls, text) => {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  };
+  const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+
+  // Malaysian IC: YYMMDD-PB-###G. Birth date from the first six digits, gender from the last (odd = lelaki).
+  function fromIc(noKp) {
+    if (!/^\d{12}$/.test(noKp)) return null;
+    const yy = Number(noKp.slice(0, 2)), mm = Number(noKp.slice(2, 4)), dd = Number(noKp.slice(4, 6));
+    const now = new Date();
+    const year = yy + (2000 + yy > now.getFullYear() ? 1900 : 2000);
+    const born = new Date(year, mm - 1, dd);
+    if (born.getMonth() !== mm - 1 || born.getDate() !== dd) return null;
+    let age = now.getFullYear() - year;
+    if (now.getMonth() < mm - 1 || (now.getMonth() === mm - 1 && now.getDate() < dd)) age--;
+    return {
+      lahir: dd + ' ' + BULAN[mm - 1] + ' ' + year,
+      umur: age + ' tahun',
+      jantina: Number(noKp.slice(-1)) % 2 ? 'Lelaki' : 'Perempuan'
+    };
+  }
+
+  // Case dates come as "1/11/2026" (d/m/y) or "2026-11-01".
+  function caseDate(text) {
+    const s = String(text || '').trim();
+    let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+    m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    return null;
+  }
+  const formatDate = d => d ? d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear() : '-';
+
+  function tahap(cases) {
+    if (!cases.length) return { text: 'Tiada rekod disiplin', cls: 'tahap-baik' };
+    if (cases.some(c => /berat/i.test(c.kategori))) return { text: 'Ada kes berat', cls: 'tahap-berat' };
+    if (cases.length >= 3 || cases.some(c => /sederhana/i.test(c.kategori))) return { text: 'Perlu pemantauan', cls: 'tahap-pantau' };
+    return { text: 'Kes ringan', cls: 'tahap-ringan' };
+  }
+
+  const buktiDialog = el('dialog', 'profile-dialog bukti-viewer'); document.body.append(buktiDialog);
+  async function showBukti(c) {
+    const body = el('div', '', 'Memuat gambar...');
+    const close = el('button', '', 'Tutup'); close.type = 'button'; close.onclick = () => buktiDialog.close();
+    const actions = el('div', 'profile-actions'); actions.append(close);
+    buktiDialog.replaceChildren(el('h2', '', 'Gambar Bukti — ' + (c.jenis || 'Kes')), body, actions);
+    if (!buktiDialog.open) buktiDialog.showModal();
+    try {
+      const photos = (await auth.call('case_evidence', { rowNumber: c.row })).photos || [];
+      if (!photos.length) { body.textContent = 'Gambar bukti tidak ditemui.'; return; }
+      body.replaceChildren(...photos.map((src, i) => { const img = el('img'); img.src = src; img.alt = 'Gambar bukti ' + (i + 1); return img; }));
+    } catch (e) { body.textContent = e.message; }
+  }
+
+  // Parents' phone: one or more numbers ("012-3456789 / 019-8765432"), each with Call and WhatsApp links.
+  function phoneRow(telefon) {
+    const box = el('div', 'kad-info-item kad-info-penuh');
+    box.append(el('span', 'kad-label', 'No. Telefon Ibu Bapa'));
+    const numbers = String(telefon || '').split(/[\/,;|]|\s+dan\s+/i).map(t => t.trim()).filter(t => t.replace(/\D/g, '').length >= 9);
+    if (!numbers.length) {
+      box.append(el('span', 'kad-value kad-kosong', telefon ? telefon : 'Belum diisi dalam tab data'));
+      return box;
+    }
+    for (const number of numbers) {
+      const digits = number.replace(/\D/g, '');
+      const intl = digits.startsWith('60') ? digits : digits.startsWith('0') ? '6' + digits : digits;
+      const line = el('div', 'kad-telefon');
+      const call = el('a', 'kad-tel-btn', '📞 Panggil'); call.href = 'tel:+' + intl;
+      const wa = el('a', 'kad-tel-btn kad-tel-wa', 'WhatsApp'); wa.href = 'https://wa.me/' + intl; wa.target = '_blank'; wa.rel = 'noopener';
+      line.append(el('span', 'kad-value', number), call, wa);
+      box.append(line);
+    }
+    return box;
+  }
+
+  function infoRow(label, value) {
+    const box = el('div', 'kad-info-item');
+    box.append(el('span', 'kad-label', label), el('span', 'kad-value', value || '-'));
+    return box;
+  }
+
+  function stat(label, value, cls) {
+    const box = el('div', 'kad-stat ' + (cls || ''));
+    box.append(el('span', 'kad-stat-num', String(value)), el('span', 'kad-stat-label', label));
+    return box;
+  }
+
+  // ── Student photo (staff only): shrink to a 320x320 JPEG, centre-cropped, before upload ──
+  async function compressPhoto(file) {
+    if (!/^image\//.test(file.type)) throw new Error('Fail bukan gambar.');
+    if (file.size > 20 * 1024 * 1024) throw new Error('Foto terlalu besar (had 20 MB).');
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.src = url;
+      try { await image.decode(); } catch { throw new Error('Foto rosak atau format tidak disokong. Cuba foto lain.'); }
+      const side = Math.min(image.naturalWidth, image.naturalHeight);
+      const canvas = document.createElement('canvas');
+      canvas.width = 320; canvas.height = 320;
+      canvas.getContext('2d').drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, 320, 320);
+      for (const quality of [0.82, 0.7, 0.55]) {
+        const data = canvas.toDataURL('image/jpeg', quality);
+        if (data.length <= 140000) return data;
+      }
+      throw new Error('Foto masih terlalu besar. Cuba foto lain.');
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function photoTools(student, photo, rerender) {
+    const bar = el('div', 'kad-foto-bar');
+    const status = el('span', 'kad-foto-status');
+    const camera = el('input'); camera.type = 'file'; camera.accept = 'image/*'; camera.setAttribute('capture', 'environment'); camera.hidden = true;
+    const gallery = el('input'); gallery.type = 'file'; gallery.accept = 'image/jpeg,image/png,image/webp'; gallery.hidden = true;
+    const take = el('button', 'kad-foto-btn', '📷 Ambil Foto'); take.type = 'button'; take.onclick = () => camera.click();
+    const upload = el('button', 'kad-foto-btn', '🖼️ Muat Naik Foto'); upload.type = 'button'; upload.onclick = () => gallery.click();
+    const remove = el('button', 'kad-foto-btn kad-foto-padam', '🗑️ Padam Foto'); remove.type = 'button'; remove.hidden = !photo;
+    const busy = (on, text) => { [take, upload, remove].forEach(b => { b.disabled = on; }); status.textContent = text || ''; };
+    async function save(input) {
+      const file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      busy(true, 'Memuat naik foto...');
+      try {
+        const data = await compressPhoto(file);
+        await auth.call('student_photo_save', { noKp: student.noKp, data });
+        rerender(data);
+      } catch (e) { busy(false, e.message); }
+    }
+    camera.onchange = () => save(camera);
+    gallery.onchange = () => save(gallery);
+    remove.onclick = async () => {
+      if (!confirm('Padam foto ' + student.nama + '?')) return;
+      busy(true, 'Memadam foto...');
+      try { await auth.call('student_photo_delete', { noKp: student.noKp }); rerender(''); }
+      catch (e) { busy(false, e.message); }
+    };
+    bar.append(take, upload, remove, status, camera, gallery);
+    return bar;
+  }
+
+  function renderCard(box, student, cases, photo) {
+    const ic = fromIc(student.noKp);
+    const sorted = cases.map(c => Object.assign({ _d: caseDate(c.tarikh) }, c))
+      .sort((a, b) => (b._d ? b._d.getTime() : 0) - (a._d ? a._d.getTime() : 0));
+    const count = re => cases.filter(c => re.test(c.kategori || '')).length;
+    const selesai = cases.filter(c => /selesai/i.test(c.status || '')).length;
+    const level = tahap(cases);
+
+    // Header
+    const head = el('div', 'kad-head');
+    let avatar;
+    if (photo) {
+      avatar = el('img', 'kad-avatar kad-avatar-foto'); avatar.src = photo; avatar.alt = 'Foto ' + student.nama;
+    } else {
+      avatar = el('div', 'kad-avatar', initials(student.nama)); avatar.setAttribute('aria-hidden', 'true');
+    }
+    const title = el('div', 'kad-title');
+    title.append(el('h2', 'kad-nama', student.nama),
+      el('p', 'kad-kelas', student.kelas + (formOf(student.kelas) ? ' · Tingkatan ' + formOf(student.kelas) : '')),
+      el('span', 'kad-tahap ' + level.cls, level.text));
+    const x = el('button', 'kad-tutup', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'Tutup profil');
+    x.onclick = () => box.close();
+    head.append(avatar, title, x);
+
+    // Personal details
+    const info = el('div', 'kad-info');
+    info.append(infoRow('No. Kad Pengenalan', formatIc(student.noKp)), infoRow('Jantina', ic && ic.jantina),
+      infoRow('Tarikh Lahir', ic && ic.lahir), infoRow('Umur', ic && ic.umur), phoneRow(student.telefon));
+
+    // Discipline summary
+    const ringkas = el('section', 'kad-section');
+    const stats = el('div', 'kad-stats');
+    stats.append(stat('Jumlah kes', cases.length, 'kad-stat-jumlah'), stat('Berat', count(/berat/i), 'kad-stat-berat'),
+      stat('Sederhana', count(/sederhana/i), 'kad-stat-sederhana'), stat('Ringan', count(/ringan/i), 'kad-stat-ringan'));
+    const statusLine = el('p', 'kad-note', cases.length
+      ? (cases.length - selesai) + ' dalam semakan · ' + selesai + ' selesai · kes terakhir: ' + formatDate(sorted[0]._d)
+      : 'Murid ini tiada sebarang rekod kesalahan disiplin.');
+    ringkas.append(el('h3', 'kad-h3', 'Ringkasan Disiplin'), stats, statusLine);
+
+    // Case history, newest first
+    const sejarah = el('section', 'kad-section');
+    sejarah.append(el('h3', 'kad-h3', 'Sejarah Kes (' + cases.length + ')'));
+    if (sorted.length) {
+      const list = el('ol', 'kad-timeline');
+      for (const c of sorted) {
+        const item = el('li', 'kad-kes');
+        const top = el('div', 'kad-kes-top');
+        top.append(el('strong', '', c.jenis || '(Jenis tidak dinyatakan)'));
+        if (c.kategori) top.append(el('span', 'kad-chip kad-chip-' + String(c.kategori).toLowerCase(), c.kategori));
+        top.append(el('span', 'kad-chip ' + (/selesai/i.test(c.status) ? 'kad-chip-selesai' : 'kad-chip-semakan'), c.status || 'Dalam Semakan'));
+        item.append(top, el('div', 'kad-kes-meta', [formatDate(c._d), c.masa].filter(Boolean).join(' · ')));
+        if (c.catatan) item.append(el('div', 'kad-kes-catatan', c.catatan));
+        if (c.bukti && c.row) {
+          const btn = el('button', 'kad-bukti-btn', '📷 Lihat gambar bukti (' + c.bukti + ')');
+          btn.type = 'button'; btn.onclick = () => showBukti(c);
+          item.append(btn);
+        }
+        list.append(item);
+      }
+      sejarah.append(list);
+    }
+
+    // Actions
+    const actions = el('div', 'kad-actions');
+    const add = el('a', 'kad-btn kad-btn-utama', '+ Tambah Rekod Kes');
+    add.href = 'rekod-kes-baru.html?' + new URLSearchParams({ nama: student.nama, nokp: student.noKp, kelas: student.kelas });
+    const print = el('button', 'kad-btn', '🖨️ Cetak Profil'); print.type = 'button';
+    // Print only the card (see the @media print rules in student-picker.css).
+    print.onclick = () => printProfile(box);
+    const close = el('button', 'kad-btn', 'Tutup'); close.type = 'button';
+    close.onclick = () => box.close();
+    actions.append(add, print, close);
+
+    const fotoBar = photoTools(student, photo, newPhoto => renderCard(box, student, cases, newPhoto));
+    box.replaceChildren(head, fotoBar, info, ringkas, sejarah, actions);
+  }
+
+  let profileRequest = 0;
+  // Popup behaviour: a tap on the dim background closes it; after closing, focus returns to the search.
+  const profileBox = $('profil-kad');
+  let printing = false;
+  if (profileBox) {
+    profileBox.addEventListener('click', event => { if (event.target === profileBox) profileBox.close(); });
+    profileBox.addEventListener('close', () => { if (!printing) { profileRequest++; profileBox.replaceChildren(); } });
+  }
+
+  // A modal popup prints on one page only, so for printing the card is shown as a normal (non-modal)
+  // dialog in the page flow, then reopened as a popup afterwards.
+  function printProfile(box) {
+    printing = true;
+    box.close();
+    box.show();
+    document.body.classList.add('cetak-profil');
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('cetak-profil');
+      box.close();
+      box.showModal();
+      printing = false;
+    }, { once: true });
+    window.print();
+  }
+
   async function openProfile(student) {
     if (!canSeeProfile) return;
-    dialog.replaceChildren();
-    const title = document.createElement('h2'); title.textContent = student.nama;
-    const meta = document.createElement('p'); meta.className = 'profile-meta';
-    meta.textContent = student.kelas + ' · No. KP ' + formatIc(student.noKp);
-    const info = document.createElement('div'); info.className = 'case-info'; info.setAttribute('aria-live', 'polite');
-    info.textContent = 'Memuat rekod disiplin...';
-    const actions = document.createElement('div'); actions.className = 'profile-actions';
-    const add = document.createElement('a'); add.className = 'profile-add';
-    add.href = 'rekod-kes-baru.html?' + new URLSearchParams({ nama: student.nama, nokp: student.noKp, kelas: student.kelas });
-    add.textContent = 'Tambah rekod kes';
-    const close = document.createElement('button'); close.type = 'button'; close.textContent = 'Tutup'; close.onclick = () => dialog.close();
-    actions.append(add, close);
-    dialog.append(title, meta, info, actions);
-    if (!dialog.open) dialog.showModal();
+    const box = $('profil-kad');
+    if (!box) return;
+    // A slow reply for an earlier student must not replace the card of the one chosen last.
+    const request = ++profileRequest;
+    box.replaceChildren(el('p', 'kad-note', 'Memuat profil ' + student.nama + '...'));
+    if (!box.open) box.showModal();
+    box.scrollTop = 0;
     try {
-      const cases = (await auth.call('student_cases', { noKp: student.noKp })).cases || [];
-      if (!cases.length) { info.textContent = 'Tiada rekod kesalahan disiplin.'; return; }
-      const heading = document.createElement('h3'); heading.textContent = 'Kesalahan disiplin (' + cases.length + ')';
-      const ol = document.createElement('ol'); ol.className = 'case-list';
-      for (const c of cases) {
-        const li = document.createElement('li');
-        const main = document.createElement('strong'); main.textContent = c.jenis || '(Jenis kesalahan tidak dinyatakan)';
-        const line = document.createElement('div');
-        line.textContent = [c.tarikh, c.masa, c.kategori, c.status, c.bukti ? c.bukti + ' gambar bukti' : ''].filter(Boolean).join(' · ');
-        li.append(main, line);
-        if (c.catatan) { const note = document.createElement('div'); note.textContent = c.catatan; li.append(note); }
-        ol.append(li);
-      }
-      info.replaceChildren(heading, ol);
-    } catch (e) { info.textContent = e.message; }
+      const result = await auth.call('student_cases', { noKp: student.noKp });
+      // The phone number comes only with the profile (staff only), not with the student list.
+      const full = Object.assign({}, student, { telefon: (result.student && result.student.telefon) || '' });
+      if (request === profileRequest) renderCard(box, full, result.cases || [], result.photo || '');
+    } catch (e) {
+      if (request === profileRequest) box.replaceChildren(el('p', 'kad-note kad-ralat', e.message));
+    }
   }
 
   // A different class means a different student: drop the current choice.

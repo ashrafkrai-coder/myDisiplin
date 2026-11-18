@@ -1,7 +1,7 @@
 // myDisiplin — kod pelayan Google Apps Script (SATU fail sahaja).
 // Tampal KESELURUHAN fail ini ke dalam Code.gs dalam editor Apps Script, padam semua fail .gs lain,
 // kemudian Deploy → Manage deployments → Edit → New version → Deploy.
-// Bahagian: 1. Penghala (doPost/doGet)  2. Akaun & peranan  3. Murid  4. Gambar bukti  5. Uji sambungan
+// Bahagian: 1. Penghala (doPost/doGet)  2. Akaun & peranan  3. Murid  4. Gambar bukti  4b. Foto murid  5. Uji sambungan
 
 // ===================== 1. Penghala =====================
 
@@ -11,7 +11,8 @@ const STUDENT_TAB_NAME = 'data';
 // Tabs the app may read through sheet_table. The 'guru' tab (password hashes) is deliberately absent.
 // The case tab is readable by Guru Disiplin, PK HEM and Pengetua only.
 const READABLE_TABS = [STUDENT_TAB_NAME, DEFAULT_TAB_NAME];
-const STAFF_ONLY_TABS = [DEFAULT_TAB_NAME];
+// The student tab holds parents' phone numbers, so a plain Guru reads students through student_list instead.
+const STAFF_ONLY_TABS = [DEFAULT_TAB_NAME, STUDENT_TAB_NAME];
 const CASE_HEADERS = ['id', 'no_kp', 'tarikh', 'masa', 'nama', 'kelas', 'jenis_kesalahan', 'kategori', 'catatan', 'status', 'dicipta_pada', 'dicipta_oleh', 'bukti'];
 
 function doPost(e) {
@@ -39,6 +40,8 @@ function doPost(e) {
     // --- Guru Disiplin, PK HEM and Pengetua only ---
     requireStaff_(user);
     if (action === 'student_cases') return jsonResponse_(studentCases_(payload.noKp));
+    if (action === 'student_photo_save') return jsonResponse_(saveStudentPhoto_(payload));
+    if (action === 'student_photo_delete') return jsonResponse_(deleteStudentPhoto_(payload));
     if (action === 'case_evidence') return jsonResponse_(caseEvidence_(payload.rowNumber));
     if (action === 'update_status') return jsonResponse_(updateStatus_(payload));
     throw new Error('Tindakan tidak sah.');
@@ -53,8 +56,8 @@ function mesejRalat_(error) {
   var text = String((error && error.message) || error || '');
   var missing = text.match(/^([\w$]+) is not defined/);
   if (missing) {
-    return 'Ralat pelayan: fungsi "' + missing[1] + '" tidak ditemui. Fail Apps Script belum lengkap: salin semua fail ' +
-      'daripada folder gas/ (Code.gs, Auth.gs, Students.gs, Evidence.gs, Diagnostik.gs), kemudian deploy versi baharu.';
+    return 'Ralat pelayan: fungsi "' + missing[1] + '" tidak ditemui. Kod Apps Script belum lengkap: tampal keseluruhan ' +
+      'gas/Code.gs, padam fail .gs lain, kemudian deploy versi baharu.';
   }
   if (/permission|authoriz|izin|kebenaran/i.test(text)) {
     return 'Ralat pelayan: Apps Script belum diberi kebenaran ke Google Sheet atau Drive. Pemilik skrip perlu jalankan ' +
@@ -77,9 +80,9 @@ function mesejRalat_(error) {
 
 // Version of the server code. Opening the web app URL in a browser shows it, together with a check that
 // every part of the code is present, so a half-pasted or not-yet-deployed script is easy to spot.
-var VERSI_PELAYAN = '2026-11-18.1';
+var VERSI_PELAYAN = '2026-11-18.4';
 var FUNGSI_WAJIB = ['registerGuru_', 'loginGuru_', 'requireSession_', 'studentList_', 'lateCount_', 'studentCases_',
-  'validateEvidence_', 'saveEvidence_', 'caseEvidence_', 'ujiSambungan'];
+  'validateEvidence_', 'saveEvidence_', 'caseEvidence_', 'studentPhoto_', 'saveStudentPhoto_', 'deleteStudentPhoto_', 'ujiSambungan'];
 
 function doGet() {
   var tiada = FUNGSI_WAJIB.filter(function (name) { return typeof globalThis[name] !== 'function'; });
@@ -419,19 +422,31 @@ function logoutGuru_(payload) {
 
 // ===================== 3. Murid =====================
 
-// Student roster and per-student case history. No student photos are stored.
+// Student roster and per-student case history.
 
 // Roster from the 'data' tab: [{nama, kelas, noKp}]. Any signed-in role (used to pick a student when recording).
-function studentList_() {
+// With includePhone, each student also gets 'telefon' (parents' phone). Only staff-only callers pass it.
+function studentList_(includePhone) {
   var sheet = SpreadsheetApp.openById(DEFAULT_SHEET_ID).getSheetByName(STUDENT_TAB_NAME);
   if (!sheet) throw new Error('Tab data tidak ditemui.');
   var rows = sheet.getDataRange().getDisplayValues();
   var headers = rows.shift().map(function (h) { return String(h).toUpperCase().replace(/[^A-Z0-9]/g, ''); });
   var n = headers.indexOf('NAMA'), k = headers.indexOf('KELAS'), id = headers.indexOf('NOKADPENGENALAN');
   if (n < 0 || k < 0 || id < 0) throw new Error('Kolum NAMA, KELAS dan NO. KAD PENGENALAN diperlukan.');
+  var tel = phoneColumn_(headers);
   return rows.filter(function (r) { return r[n] && r[k] && r[id]; }).map(function (r) {
-    return { nama: r[n].trim(), kelas: r[k].trim(), noKp: icKey_(r[id]) };
+    var s = { nama: r[n].trim(), kelas: r[k].trim(), noKp: icKey_(r[id]) };
+    if (includePhone) s.telefon = tel >= 0 ? String(r[tel] || '').trim() : '';
+    return s;
   });
+}
+
+// Column of the parents' phone number: "NO. TELEFON IBU BAPA" (also accepts "NO TEL IBU BAPA", "TELEFON WARIS" ...).
+function phoneColumn_(headers) {
+  for (var i = 0; i < headers.length; i++) {
+    if (/^(NO)?(TEL|TELEFON|TELEPHONE|HP|PHONE)/.test(headers[i]) && /(IBU|BAPA|WARIS|PENJAGA|PARENT)/.test(headers[i])) return i;
+  }
+  return -1;
 }
 
 function icKey_(value) {
@@ -444,8 +459,8 @@ function caseRows_() {
   if (!sheet || sheet.getLastRow() < 2) return [];
   var rows = sheet.getDataRange().getDisplayValues();
   var headers = rows.shift().map(function (h) { return String(h).toLowerCase().replace(/[^a-z0-9]/g, ''); });
-  return rows.map(function (r) {
-    var o = {};
+  return rows.map(function (r, index) {
+    var o = { _row: index + 2 }; // sheet row number, used to fetch the case's evidence photos
     headers.forEach(function (h, i) { if (h && !(h in o)) o[h] = String(r[i] == null ? '' : r[i]).trim(); });
     return o;
   });
@@ -465,15 +480,15 @@ function lateCount_(noKp) {
 // Profile: the student plus their discipline records. Guru Disiplin, PK HEM and Pengetua only.
 function studentCases_(noKp) {
   var key = icKey_(noKp);
-  var student = studentList_().filter(function (s) { return s.noKp === key; })[0];
+  var student = studentList_(true).filter(function (s) { return s.noKp === key; })[0];
   if (!student) throw new Error('Murid tidak ditemui dalam tab data.');
   var cases = caseRows_().filter(function (c) { return c.nokp && icKey_(c.nokp) === key; }).map(function (c) {
     return {
       tarikh: c.tarikh || '', masa: c.masa || '', jenis: c.jeniskesalahan || '', kategori: c.kategori || '',
-      catatan: c.catatan || '', status: c.status || '', bukti: c.bukti ? c.bukti.split(',').length : 0
+      catatan: c.catatan || '', status: c.status || '', bukti: c.bukti ? c.bukti.split(',').length : 0, row: c._row
     };
   });
-  return { ok: true, student: student, cases: cases };
+  return { ok: true, student: student, cases: cases, photo: studentPhoto_(key) };
 }
 
 // ===================== 4. Gambar bukti =====================
@@ -541,6 +556,81 @@ function caseEvidence_(rowNumber) {
   return { ok: true, photos: photos };
 }
 
+// ===================== 4b. Foto murid =====================
+
+// Student photos: Guru Disiplin, PK HEM and Pengetua only. One private JPEG per student in a Drive folder;
+// Script Properties map 'photo_<noKp>' to its file ID (the same keys the earlier photo feature used, so
+// photos saved before are picked up again).
+var MAX_PHOTO_CHARS = 150000; // data URI length, about 110 KB of JPEG
+
+function photoFolder_() {
+  var props = PropertiesService.getScriptProperties();
+  var folderId = props.getProperty('PHOTO_FOLDER_ID');
+  if (folderId) {
+    try { return DriveApp.getFolderById(folderId); } catch (e) { /* folder deleted: make a new one */ }
+  }
+  var folder = DriveApp.createFolder('myDisiplin Foto Murid');
+  props.setProperty('PHOTO_FOLDER_ID', folder.getId());
+  return folder;
+}
+
+// The student's photo as a data URI, or ''. Cached by Drive file ID, which changes whenever the photo is replaced.
+function studentPhoto_(noKp) {
+  var fileId = PropertiesService.getScriptProperties().getProperty('photo_' + icKey_(noKp));
+  if (!fileId) return '';
+  var cache = CacheService.getScriptCache(), key = 'ph_' + fileId;
+  var hit = cache.get(key);
+  if (hit) return hit;
+  try {
+    var uri = 'data:image/jpeg;base64,' + Utilities.base64Encode(DriveApp.getFileById(fileId).getBlob().getBytes());
+    if (uri.length < 90000) cache.put(key, uri, 21600);
+    return uri;
+  } catch (e) { return ''; }
+}
+
+function requireKnownStudent_(noKp) {
+  var key = icKey_(noKp);
+  if (!/^\d{12}$/.test(key) || !studentList_().some(function (s) { return s.noKp === key; })) {
+    throw new Error('Murid tidak ditemui dalam tab data.');
+  }
+  return key;
+}
+
+function saveStudentPhoto_(payload) {
+  var noKp = requireKnownStudent_(payload.noKp);
+  var data = String(payload.data || '');
+  if (data.length > MAX_PHOTO_CHARS || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(data)) throw new Error('Format atau saiz foto tidak sah.');
+  var bytes = Utilities.base64Decode(data.split(',')[1]);
+  if (bytes.length < 4 || (bytes[0] & 255) !== 255 || (bytes[1] & 255) !== 216) throw new Error('Fail JPEG foto tidak sah.');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var previous = props.getProperty('photo_' + noKp);
+    var file = photoFolder_().createFile(Utilities.newBlob(bytes, 'image/jpeg', noKp + '_' + Utilities.getUuid().slice(0, 8) + '.jpg'));
+    props.setProperty('photo_' + noKp, file.getId());
+    if (previous) { try { DriveApp.getFileById(previous).setTrashed(true); } catch (e) { /* already gone */ } }
+  } finally {
+    lock.releaseLock();
+  }
+  return { ok: true, photo: data };
+}
+
+function deleteStudentPhoto_(payload) {
+  var noKp = icKey_(payload.noKp);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var previous = props.getProperty('photo_' + noKp);
+    if (previous) { try { DriveApp.getFileById(previous).setTrashed(true); } catch (e) { /* already gone */ } }
+    props.deleteProperty('photo_' + noKp);
+  } finally {
+    lock.releaseLock();
+  }
+  return { ok: true };
+}
+
 // ===================== 5. Uji sambungan =====================
 
 // Connection test. In the Apps Script editor choose "ujiSambungan" and press Run, then open the
@@ -602,6 +692,8 @@ function ujiSambungan() {
   } catch (e) { gagal('Tab guru: ' + e.message); }
 
   // 5. Drive folder for evidence photos
+  try { lulus('Folder Drive foto murid: "' + photoFolder_().getName() + '"'); }
+  catch (e) { gagal('Folder Drive foto murid: ' + e.message); }
   try { lulus('Folder Drive gambar bukti: "' + evidenceFolder_().getName() + '"'); }
   catch (e) { gagal('Folder Drive gambar bukti: ' + e.message); }
 

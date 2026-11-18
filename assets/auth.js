@@ -1,7 +1,7 @@
 (function () {
   const KEY = "mydisiplin_auth_state";
   // Single Apps Script endpoint for the whole app.
-  const ENDPOINT = "https://script.google.com/macros/s/AKfycbwaf-PScWZYIRFZdAqctZid8slgiLiYQeUGhts6LHWEHc0r_7kLzyHg3H5xz-qzPBbm/exec";
+  const ENDPOINT = "https://script.google.com/macros/s/AKfycbyxYslWAf_kAZpUumGyX9PuQ3shroMkDwSrbRiinIhu_X3hn9fkldOSwb6lW-abdAbf/exec";
   // Roles. A plain "Guru" may only record cases; the server enforces this, the app just hides what it cannot use.
   const ROLES = ["Guru", "Guru Disiplin", "PK HEM", "Pengetua"];
   const STAFF_ROLES = ["Guru Disiplin", "PK HEM", "Pengetua"];

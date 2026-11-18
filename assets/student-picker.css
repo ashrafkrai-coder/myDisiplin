@@ -84,3 +84,125 @@
 .picker-panel .search-box { margin-bottom: 12px; }
 .picker-name { display: flex; flex-direction: column; min-width: 0; }
 .picker-name small { font-size: 12px; font-weight: 500; color: var(--ios-label3); }
+
+/* ── Kad profil murid (profil-murid.html) ── */
+/* Popup: centred over the page, scrolls inside itself, dim background behind */
+.profil-kad {
+  width: min(520px, 94vw); max-height: 92dvh; margin: auto; padding: 0; border: 0; overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--ios-surface); border-radius: var(--ios-radius); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  color: var(--ios-label);
+}
+.profil-kad::backdrop { background: rgba(10, 20, 35, 0.6); }
+.profil-kad[open] { animation: kad-masuk 0.18s ease-out; }
+@keyframes kad-masuk { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+.kad-head { position: relative; }
+.profil-kad .kad-tutup {
+  position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; padding: 0; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;
+  background: rgba(255, 255, 255, 0.18); color: #fff; box-shadow: none;
+}
+.profil-kad .kad-tutup:hover { background: rgba(255, 255, 255, 0.3); }
+.kad-title { padding-right: 30px; }
+.profil-kad > .kad-note { padding: 18px; margin: 0; }
+.kad-head {
+  display: flex; align-items: center; gap: 16px; padding: 20px 18px;
+  background: linear-gradient(135deg, #0f2744, #1d4f8a); color: #fff;
+}
+.kad-avatar {
+  flex: 0 0 auto; width: 72px; height: 72px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.16); border: 2px solid rgba(255, 255, 255, 0.5);
+  font-size: 26px; font-weight: 800; letter-spacing: 1px;
+}
+.kad-title { min-width: 0; }
+.kad-nama { margin: 0 0 4px; font-size: 19px; line-height: 1.25; color: #fff; overflow-wrap: anywhere; }
+.kad-kelas { margin: 0 0 8px; font-size: 14px; color: rgba(255, 255, 255, 0.8); }
+.kad-tahap { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.tahap-baik { background: #d1fae5; color: #065f46; }
+.tahap-ringan { background: #e0f2fe; color: #075985; }
+.tahap-pantau { background: #fef3c7; color: #92400e; }
+.tahap-berat { background: #fee2e2; color: #991b1b; }
+
+.kad-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--ios-separator); }
+.kad-info-item { display: flex; flex-direction: column; gap: 2px; padding: 12px 18px; border-top: 1px solid var(--ios-separator); }
+.kad-info-item:nth-child(-n+2) { border-top: 0; }
+.kad-info-item:nth-child(even) { border-left: 1px solid var(--ios-separator); }
+.kad-label { font-size: 11px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ios-label3); }
+.kad-value { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+
+.kad-section { padding: 16px 18px; border-bottom: 1px solid var(--ios-separator); }
+.kad-h3 { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--ios-label3); }
+.kad-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.kad-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border-radius: 12px; background: var(--ios-fill2); }
+.kad-stat-num { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.kad-stat-label { font-size: 11px; font-weight: 600; color: var(--ios-label3); text-align: center; }
+.kad-stat-berat .kad-stat-num { color: #dc2626; }
+.kad-stat-sederhana .kad-stat-num { color: #d97706; }
+.kad-stat-ringan .kad-stat-num { color: #0284c7; }
+.kad-note { margin: 10px 0 0; font-size: var(--fs-small); color: var(--ios-label3); line-height: 1.5; }
+.kad-ralat { color: var(--danger-text); }
+
+.kad-timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--ios-separator); }
+.kad-kes { position: relative; padding: 0 0 14px 12px; }
+.kad-kes::before {
+  content: ""; position: absolute; left: -21px; top: 4px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--ios-accent); border: 2px solid var(--ios-surface);
+}
+.kad-kes:last-child { padding-bottom: 0; }
+.kad-kes-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; overflow-wrap: anywhere; }
+.kad-chip { padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--ios-fill); color: var(--ios-label2); }
+.kad-chip-berat { background: #fee2e2; color: #991b1b; }
+.kad-chip-sederhana { background: #fef3c7; color: #92400e; }
+.kad-chip-ringan { background: #e0f2fe; color: #075985; }
+.kad-chip-selesai { background: #d1fae5; color: #065f46; }
+.kad-chip-semakan { background: #ffedd5; color: #9a3412; }
+.kad-kes-meta { margin-top: 3px; font-size: 12px; color: var(--ios-label3); }
+.kad-kes-catatan { margin-top: 4px; font-size: 13px; color: var(--ios-label2); line-height: 1.45; overflow-wrap: anywhere; }
+.profil-kad .kad-bukti-btn { margin-top: 6px; padding: 6px 10px; font-size: 12px; background: var(--ios-fill); color: var(--ios-label); box-shadow: none; }
+
+.kad-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px 18px; }
+.profil-kad .kad-btn {
+  flex: 1 1 140px; display: inline-flex; align-items: center; justify-content: center; padding: 11px 14px;
+  border-radius: var(--ios-radius-sm); font-size: 14px; font-weight: 600; text-decoration: none;
+  background: var(--ios-fill); color: var(--ios-label); box-shadow: none;
+}
+.profil-kad .kad-btn-utama { background: var(--ios-accent); color: #fff; }
+
+@media (max-width: 380px) {
+  .kad-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kad-avatar { width: 58px; height: 58px; font-size: 21px; }
+}
+
+/* Cetak Profil: only the card is printed */
+@media print {
+  body.cetak-profil main > :not(#profil-kad) { display: none !important; }
+  .profil-kad { position: static; width: 100%; max-height: none; overflow: visible; box-shadow: none; border: 1px solid #ccc; animation: none; }
+  .profil-kad::backdrop { display: none; }
+  .kad-tutup { display: none !important; }
+  .kad-head { background: #0f2744 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .kad-actions, .kad-bukti-btn { display: none !important; }
+}
+
+/* Foto murid pada kad profil */
+.kad-avatar-foto { object-fit: cover; padding: 0; background: rgba(255, 255, 255, 0.16); }
+.kad-foto-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; border-bottom: 1px solid var(--ios-separator); background: var(--ios-fill2); }
+.profil-kad .kad-foto-btn { padding: 7px 12px; font-size: 13px; font-weight: 600; background: var(--ios-surface); color: var(--ios-label); box-shadow: none; border: 1px solid var(--ios-separator); }
+.profil-kad .kad-foto-padam { color: var(--danger-text); }
+.profil-kad .kad-foto-btn:disabled { opacity: 0.5; }
+.kad-foto-status { font-size: 12px; color: var(--ios-label3); }
+.kad-foto-status:empty { display: none; }
+@media print { .kad-foto-bar { display: none !important; } }
+
+/* No. telefon ibu bapa pada kad profil */
+.kad-info-penuh { grid-column: 1 / -1; border-left: 0 !important; border-top: 1px solid var(--ios-separator) !important; }
+.kad-telefon { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.kad-telefon .kad-value { margin-right: 4px; }
+.kad-tel-btn {
+  display: inline-flex; align-items: center; padding: 5px 11px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; text-decoration: none;
+  background: var(--ios-accent-soft); color: var(--ios-accent);
+}
+.kad-tel-wa { background: #dcfce7; color: #166534; }
+.kad-kosong { color: var(--ios-label3); font-weight: 500; font-style: italic; }
+@media print { .kad-tel-btn { display: none; } }

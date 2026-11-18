@@ -297,7 +297,7 @@
       <div class="toolbar">
         <input id="filter-nama" type="text" aria-label="Tapis nama murid" placeholder="Tapis nama murid" />
         <select id="filter-kategori" aria-label="Jenis kesalahan">
-          <option value="">Semua jenis kesalahan</option>
+          <option value="">Pilih jenis kesalahan</option>
         </select>
         <select id="filter-status" aria-label="Status">
           <option value="">Semua status</option>
@@ -401,6 +401,10 @@
     }
 
     function renderCards(rows) {
+      if (rows === null) {
+        container.innerHTML = "<div class='empty'>Pilih jenis kesalahan untuk memaparkan senarai kes.</div>";
+        return;
+      }
       if (!rows.length) {
         container.innerHTML = "<div class='empty'>Tiada rekod kes dijumpai.</div>";
         return;
@@ -443,9 +447,13 @@
       }).join("")}</div>`;
     }
 
+    // Cases are listed only after a type of offence is chosen ("Semua" is an explicit choice too).
+    const SEMUA_JENIS = "__semua__";
+
     function getFilteredRows() {
+      if (!filterKategoriEl.value) return null;
       const namaQuery = filterNamaEl.value.trim().toLowerCase();
-      const kategoriQuery = filterKategoriEl.value.trim().toLowerCase();
+      const kategoriQuery = filterKategoriEl.value === SEMUA_JENIS ? "" : filterKategoriEl.value.trim().toLowerCase();
       const statusQuery = filterStatusEl.value.trim().toLowerCase();
       const tarikhMulaRaw = filterTarikhMulaEl.value;
       const tarikhAkhirRaw = filterTarikhAkhirEl.value;
@@ -463,17 +471,32 @@
       });
     }
 
+    // Every official type of offence (as in Rekod Kes Baru) plus any other type found in the sheet,
+    // each with its number of cases.
+    const JENIS_KESALAHAN = [
+      "BARANG LARANGAN", "DADAH", "KEKEMASAN DIRI", "KENAKALAN", "KESALAHAN ASRAMA", "KESALAHAN SIBER",
+      "KES KHAS", "PENGLIBATAN POLITIK", "SALAH LAKU BULI", "SALAH LAKU PONTENG KELAS", "SALAH LAKU ROKOK",
+      "SALAH LAKU ROKOK ELEKTRONIK", "SALAH LAKU TELEFON BIMBIT", "SALAH LAKU TIDAK AMANAH", "SEKSUAL",
+      "TINGKAH LAKU JENAYAH", "TINGKAH LAKU KURANG SOPAN/BIADAP", "TINGKAH LAKU LUCAH",
+      "TINGKAH LAKU TIDAK PENTINGKAN MASA", "VANDALISME"
+    ];
+
     function populateKategoriOptions(rows) {
       const current = filterKategoriEl.value;
-      const categories = Array.from(
-        new Set(rows.map((item) => String(item.jenis || "").trim()).filter(Boolean))
-      ).sort((a, b) => a.localeCompare(b, "ms"));
+      const counts = new Map();
+      rows.forEach((item) => {
+        const jenis = String(item.jenis || "").trim().toUpperCase();
+        if (jenis) counts.set(jenis, (counts.get(jenis) || 0) + 1);
+      });
+      const extra = Array.from(counts.keys()).filter((j) => !JENIS_KESALAHAN.includes(j));
+      const categories = JENIS_KESALAHAN.concat(extra.sort((a, b) => a.localeCompare(b, "ms")));
 
       filterKategoriEl.innerHTML =
-        `<option value="">Semua jenis kesalahan</option>` +
-        categories.map((cat) => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join("");
+        `<option value="">Pilih jenis kesalahan</option>` +
+        categories.map((cat) => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)} (${counts.get(cat) || 0})</option>`).join("") +
+        `<option value="${SEMUA_JENIS}">Semua jenis kesalahan (${rows.length})</option>`;
 
-      if (current && categories.includes(current)) filterKategoriEl.value = current;
+      if (current && Array.from(filterKategoriEl.options).some((o) => o.value === current)) filterKategoriEl.value = current;
     }
 
     function applyFilters() {

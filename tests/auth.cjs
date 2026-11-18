@@ -82,7 +82,8 @@ const asGuru = p => post({ session: guruSession, ...p });
 assert.equal(asGuru({ action: 'whoami' }).peranan, 'Guru');
 assert.equal(asGuru({ action: 'student_list' }).students.length, 2, 'Guru needs the roster to pick a student');
 assert.equal(asGuru({ action: 'late_count', noKp: '090101010001' }).count, 0);
-assert.equal(asGuru({ action: 'sheet_table', tab: 'data' }).ok, true);
+assert.equal(asGuru({ action: 'sheet_table', tab: 'data' }).code, 'ROLE', 'the data tab holds parents phone numbers');
+assert.equal(asGuru({ action: 'student_list' }).students[0].telefon, undefined, 'student_list never carries phone numbers');
 for (const p of [{ action: 'sheet_table', tab: 'Rekod kes baru' }, { action: 'student_cases', noKp: '090101010001' },
   { action: 'case_evidence', rowNumber: 2 }, { action: 'update_status', rowNumber: 2, status: 'Selesai' }]) {
   r = asGuru(p);
@@ -133,6 +134,37 @@ r = asStaff({ action: 'update_status', rowNumber: 2, status: 'Dalam Semakan' });
 assert.equal(r.ok, true); assert.equal(caseRows[1][9], 'Dalam Semakan');
 assert.equal(asStaff({ action: 'update_status', rowNumber: 1, status: 'x' }).ok, false);
 
+// --- Student photos: staff only, validated, replace trashes nothing visible, delete clears ---
+const KP = '090101010001';
+for (const p of [{ action: 'student_photo_save', noKp: KP, data: JPEG }, { action: 'student_photo_delete', noKp: KP }]) {
+  assert.equal(asGuru(p).code, 'ROLE', 'Guru cannot ' + p.action);
+}
+assert.equal(asStaff({ action: 'student_cases', noKp: KP }).photo, '', 'no photo yet');
+assert.match(asStaff({ action: 'student_photo_save', noKp: '999999999999', data: JPEG }).error, /tidak ditemui/);
+assert.match(asStaff({ action: 'student_photo_save', noKp: KP, data: 'data:image/png;base64,AAAA' }).error, /Format/);
+assert.match(asStaff({ action: 'student_photo_save', noKp: KP, data: 'data:image/jpeg;base64,AAAA' }).error, /JPEG/);
+assert.match(asStaff({ action: 'student_photo_save', noKp: KP, data: 'data:image/jpeg;base64,' + 'a'.repeat(150000) }).error, /saiz/);
+r = asStaff({ action: 'student_photo_save', noKp: KP, data: JPEG });
+assert.equal(r.ok, true);
+const firstPhoto = gas.props.get('photo_' + KP);
+assert.ok(firstPhoto, 'photo file recorded');
+assert.ok(asStaff({ action: 'student_cases', noKp: KP }).photo.startsWith('data:image/jpeg;base64,'), 'profile returns the photo');
+assert.equal(asStaff({ action: 'student_photo_save', noKp: KP, data: JPEG }).ok, true);
+assert.notEqual(gas.props.get('photo_' + KP), firstPhoto, 'replacing stores a new file');
+assert.equal(asStaff({ action: 'student_photo_delete', noKp: KP }).ok, true);
+assert.equal(gas.props.has('photo_' + KP), false);
+assert.equal(asStaff({ action: 'student_cases', noKp: KP }).photo, '');
+assert.equal(asStaff({ action: 'student_photo_delete', noKp: KP }).ok, true, 'delete is idempotent');
+
+// --- Parents' phone number: only on the staff profile ---
+assert.equal(asStaff({ action: 'student_cases', noKp: KP }).student.telefon, '', 'no phone column yet: empty');
+const telGas = createGas({ sheets: { data: [['BIL', 'NAMA', 'NO. KAD PENGENALAN', ' KELAS', 'NO. TELEFON IBU BAPA'], ['1', 'MURID UJIAN', '090101010001', '1 AL-FARABI', '012-3456789']] } });
+telGas.post({ action: 'register', username: 'pk.tel', nama: 'PK Telefon', password: 'RahsiaBesar1', peranan: 'PK HEM' });
+telGas.sheets.get('guru').rows[1][4] = 'aktif';
+const telSession = telGas.post({ action: 'login', username: 'pk.tel', password: 'RahsiaBesar1' }).session;
+assert.equal(telGas.post({ action: 'student_cases', session: telSession, noKp: KP }).student.telefon, '012-3456789');
+assert.equal(telGas.post({ action: 'student_list', session: telSession }).students[0].telefon, undefined);
+
 // --- Role changes in the sheet apply after the 5 minute cache ---
 sheets.get('guru').rows[1][7] = 'Guru Disiplin';
 cache.delete('role_cikgu.aini');
@@ -146,10 +178,10 @@ assert.equal(post({ action: 'logout', session: staffSession }).ok, true);
 assert.equal(asStaff({ action: 'sheet_table', tab: 'data' }).code, 'SESSION');
 
 // --- Disabling an account ends its sessions (after the 5 minute cache) ---
-assert.equal(asGuru({ action: 'sheet_table', tab: 'data' }).ok, true);
+assert.equal(asGuru({ action: 'student_list' }).ok, true);
 sheets.get('guru').rows[1][4] = 'tidak aktif';
 cache.delete('role_cikgu.aini');
-assert.equal(asGuru({ action: 'sheet_table', tab: 'data' }).code, 'SESSION');
+assert.equal(asGuru({ action: 'student_list' }).code, 'SESSION');
 assert.match(post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1' }).error, /tidak aktif/);
 sheets.get('guru').rows[1][4] = 'aktif';
 

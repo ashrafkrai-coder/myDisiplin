@@ -28,7 +28,7 @@ Had akses dikuatkuasakan di pelayan (Apps Script), bukan sekadar disembunyikan p
 3. **Deploy → Manage deployments → Edit (ikon pensel) → Version: New version → Deploy.** Gunakan deployment sedia ada supaya URL kekal.
    Menyimpan sahaja TIDAK mencukupi: URL aplikasi menjalankan versi yang di-deploy, bukan kod dalam editor.
    Kali pertama gambar bukti dimuat naik, Google akan meminta kebenaran Drive. Pemilik skrip perlu benarkan.
-4. **Semak:** buka URL Web App dalam pelayar. Ia mesti memaparkan `"versi":"2026-11-18.1"` dan `"tiada":[]`.
+4. **Semak:** buka URL Web App dalam pelayar. Ia mesti memaparkan `"versi":"2026-11-18.4"` dan `"tiada":[]`.
    Jika `versi` tiada atau berbeza, deploy belum dibuat dengan kod terkini. Jika `tiada` menyenaraikan nama fungsi, kod tidak ditampal sepenuhnya.
 
 ## B. Akaun sedia ada
@@ -63,3 +63,18 @@ Kata laluan disimpan sebagai hash bergaram. Lima percubaan gagal mengunci userna
 Dalam editor Apps Script, pilih fungsi **`ujiSambungan`** → **Run** → buka **Execution log**.
 Ia menyemak Google Sheet, tab dan header, senarai murid, akaun dan peranan (termasuk akaun yang menunggu kelulusan) dan folder Drive gambar bukti.
 Setiap baris bertanda `LULUS` atau `GAGAL` dengan sebabnya.
+
+## Foto murid
+
+- Dalam **Profil Murid**, pilih murid, kemudian tekan **Ambil Foto** (kamera) atau **Muat Naik Foto** (galeri). **Padam Foto** untuk membuang.
+- Hanya Guru Disiplin, PK HEM dan Pengetua boleh melihat, memuat naik atau memadam foto.
+- Foto dipotong segi empat dan dikecilkan (320×320, JPEG) sebelum dihantar, kemudian disimpan dalam folder Drive peribadi `myDisiplin Foto Murid`.
+  ID fail disimpan dalam Script Properties (`photo_<No KP>`). Foto lama daripada versi terdahulu dipaparkan semula secara automatik.
+
+## No. telefon ibu bapa
+
+- Isi lajur **NO. TELEFON IBU BAPA** (lajur E) dalam tab `data`. Lajur ini berformat teks supaya sifar di hadapan tidak hilang.
+  Lebih daripada satu nombor boleh dipisahkan dengan `/`, contohnya `012-3456789 / 019-8765432`.
+- Nombor dipaparkan dalam kad Profil Murid, dengan butang **Panggil** dan **WhatsApp**.
+- Hanya Guru Disiplin, PK HEM dan Pengetua boleh melihatnya. Guru biasa tidak lagi boleh membaca tab `data` secara penuh;
+  carian murid dalam Rekod Kes Baru menggunakan senarai tanpa nombor telefon.
