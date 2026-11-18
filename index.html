@@ -126,14 +126,13 @@
       margin-bottom: 10px;
     }
 
-    .student-photo {
+    .student-initials {
       flex: 0 0 auto;
-      width: 72px;
-      height: 72px;
-      border-radius: 14px;
-      object-fit: cover;
-      background: var(--ios-fill);
-      color: var(--ios-label3);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--ios-accent-soft);
+      color: var(--ios-accent);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -316,7 +315,7 @@
       <a href="rekod-kes-baru.html">Rekod Kes Baru</a>
       <a href="senarai-kes.html">Senarai Kes</a>
       <a href="dashbord.html">Dashbord</a>
-      <a href="profil-murid.html">Profil &amp; Foto Murid</a>
+      <a href="profil-murid.html">Profil Murid</a>
     </div>
     <section class="search-panel" id="carian-murid">
       <h2>Carian Nama Murid</h2>
@@ -331,9 +330,8 @@
       </div>
     </section>
     <div class="actions">
-      <button id="install-btn">Install Aplikasi</button>
-      <button id="logout-btn" class="secondary">Log Keluar</button>
-      <button id="refresh-btn" class="secondary" hidden>Muat Ulang Update</button>
+      <button id="install-btn">Pasang Aplikasi</button>
+      <button id="refresh-btn" class="secondary" hidden>Muat Semula Versi Baharu</button>
     </div>
     <p id="install-status" class="install-status" role="status" aria-live="polite"></p>
   </main>
@@ -343,7 +341,6 @@
       const swStatusEl = document.getElementById("sw-status");
       const installStatusEl = document.getElementById("install-status");
       const installBtn = document.getElementById("install-btn");
-      const logoutBtn = document.getElementById("logout-btn");
       const refreshBtn = document.getElementById("refresh-btn");
       const studentSearchForm = document.getElementById("student-search-form");
       const studentNameInput = document.getElementById("student-name");
@@ -450,7 +447,7 @@
             return `
               <div class="student-item">
                 <div class="student-head">
-                  <span class="student-photo" data-nokp="${escapeHtml(photoKey(student.noKp))}" aria-hidden="true">${escapeHtml(initials(student.nama))}</span>
+                  <span class="student-initials" aria-hidden="true">${escapeHtml(initials(student.nama))}</span>
                   <div class="student-head-text">
                     <p class="student-title">${escapeHtml(student.nama || "-")}</p>
                     <p class="student-meta">No KP: ${escapeHtml(student.noKp || "-")} | Kelas: ${escapeHtml(student.kelas || "-")}</p>
@@ -460,61 +457,21 @@
                 ${caseHtml}
                 <div class="student-actions">
                   <a class="add-record-link" href="${escapeHtml(buildAddRecordUrl(student))}">Tambah Rekod Baru</a>
-                  <a class="add-record-link" href="profil-murid.html?foto=${encodeURIComponent(photoKey(student.noKp))}">Urus Foto Profil</a>
+                  <a class="add-record-link" href="profil-murid.html?murid=${encodeURIComponent(icKey(student.noKp))}">Lihat Profil Murid</a>
                 </div>
               </div>
             `;
           })
           .join("");
-        loadPhotos();
       }
 
-      // ── Student photos (private; fetched with the teacher session) ──
-      const photoCache = {};
-      const photoPending = new Set();
-
-      function photoKey(noKp) {
+      function icKey(noKp) {
         const digits = String(noKp || "").replace(/[^0-9]/g, "");
         return digits ? digits.padStart(12, "0") : "";
       }
 
       function initials(name) {
         return String(name || "").trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join("").toUpperCase() || "?";
-      }
-
-      function showPhoto(el, src) {
-        const img = document.createElement("img");
-        img.className = "student-photo";
-        img.alt = "";
-        img.src = src;
-        img.dataset.nokp = el.dataset.nokp;
-        el.replaceWith(img);
-      }
-
-      function applyPhotos() {
-        searchOutput.querySelectorAll("span.student-photo[data-nokp]").forEach((el) => {
-          const src = photoCache[el.dataset.nokp];
-          if (src) showPhoto(el, src);
-        });
-      }
-
-      function loadPhotos() {
-        const wanted = Array.from(searchOutput.querySelectorAll("span.student-photo[data-nokp]"))
-          .map((el) => el.dataset.nokp)
-          .filter((id) => id && !(id in photoCache) && !photoPending.has(id));
-        const ids = Array.from(new Set(wanted));
-        ids.forEach((id) => photoPending.add(id));
-        applyPhotos();
-        for (let i = 0; i < ids.length; i += 8) {
-          const noKps = ids.slice(i, i + 8);
-          window.myDisiplinAuth.call("photo_batch", { noKps })
-            .then((result) => {
-              noKps.forEach((id) => { photoCache[id] = (result.photos && result.photos[id]) || ""; });
-              applyPhotos();
-            })
-            .catch(() => {})
-            .finally(() => noKps.forEach((id) => photoPending.delete(id)));
-        }
       }
 
       async function loadStudentsFromSheet() {
@@ -622,11 +579,11 @@
           const isIOS = /iPad|iPhone|iPod/i.test(ua);
           const isAndroid = /Android/i.test(ua);
           if (isIOS) {
-            setInstallStatus("iPhone/iPad: guna Share > Add to Home Screen.");
+            setInstallStatus("iPhone/iPad: tekan butang Kongsi, kemudian pilih Tambah ke Skrin Utama.");
           } else if (isAndroid) {
-            setInstallStatus("Android: buka menu browser (⋮) > Install app / Add to Home screen.");
+            setInstallStatus("Android: buka menu pelayar (⋮), kemudian pilih Pasang aplikasi atau Tambah ke skrin utama.");
           } else {
-            setInstallStatus("Jika tiada pop-up, buka menu browser dan pilih Install app.");
+            setInstallStatus("Jika tiada tetingkap pemasangan, buka menu pelayar dan pilih Pasang aplikasi.");
           }
           return;
         }
@@ -634,7 +591,7 @@
         const choice = await deferredPrompt.userChoice;
         deferredPrompt = null;
         if (choice && choice.outcome === "accepted") hideInstall();
-        else setInstallStatus("pemasangan dibatalkan");
+        else setInstallStatus("Pemasangan dibatalkan.");
       });
 
       window.addEventListener("appinstalled", () => {
@@ -676,9 +633,6 @@
         window.location.reload();
       });
 
-      logoutBtn.addEventListener("click", () => {
-        if (window.myDisiplinAuth) window.myDisiplinAuth.signOut();
-      });
     })();
   </script>
 </body>

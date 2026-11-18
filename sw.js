@@ -1,4 +1,4 @@
-const APP_VERSION = "v55";
+const APP_VERSION = "v63";
 const STATIC_CACHE = `mydisiplin-static-${APP_VERSION}`;
 const RUNTIME_CACHE = `mydisiplin-runtime-${APP_VERSION}`;
 const STATIC_ASSETS = [
@@ -18,8 +18,8 @@ const STATIC_ASSETS = [
   "assets/app-header.js",
   "icons/logo-sekolah.png",
   "assets/auth.js",
-  "assets/student-photos.js",
-  "assets/student-photos.css",
+  "assets/student-picker.js",
+  "assets/student-picker.css",
   "assets/dark.css",
   "assets/theme-toggle.js",
   "profil-murid.html",

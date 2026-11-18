@@ -239,3 +239,12 @@ button[hidden] { display: none; }
 @media print {
   .theme-toggle { display: none !important; }
 }
+
+/* ── Role-based menus ── */
+/* [hidden] must win over display rules such as .menu a { display: flex }. */
+[hidden] { display: none !important; }
+/* A Guru may only record cases: auth.js marks <html> before the page paints, so the other tabs never flash.
+   With a single page left, the page menu itself is not needed. */
+html.akses-guru .menu,
+html.akses-guru .quick-links a:not([href^="rekod-kes-baru.html"]),
+html.akses-guru [data-staff-only] { display: none !important; }

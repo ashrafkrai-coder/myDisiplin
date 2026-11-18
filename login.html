@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0f2744" />
-  <title>myDisiplin - Sign In</title>
+  <title>myDisiplin - Log Masuk</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="assets/theme.css" />
   <link rel="icon" href="icons/icon32.png" type="image/png" />
@@ -104,14 +104,22 @@
   <section class="login-card">
     <img class="logo" src="icons/logo-sekolah.png" alt="Logo myDisiplin" />
     <h1 class="title">myDisiplin</h1>
-    <p class="muted">Log masuk dengan akaun guru anda. Guru baharu boleh mendaftar sendiri.</p>
+    <p class="muted">Sistem rekod disiplin murid. Log masuk dengan akaun anda, atau daftar akaun baharu mengikut peranan.</p>
     <div class="tabs" role="tablist">
       <button id="tab-login" type="button" role="tab" aria-selected="true">Log Masuk</button>
       <button id="tab-register" type="button" role="tab" aria-selected="false">Daftar Akaun</button>
     </div>
 
     <form id="login-form" autocomplete="on">
-      <div class="field"><label for="login-username">Username</label>
+      <div class="field"><label for="login-peranan">Peranan</label>
+        <select id="login-peranan" name="peranan" required>
+          <option value="">Pilih peranan</option>
+          <option value="Guru">Guru</option>
+          <option value="Guru Disiplin">Guru Disiplin</option>
+          <option value="PK HEM">PK HEM</option>
+          <option value="Pengetua">Pengetua</option>
+        </select></div>
+      <div class="field"><label for="login-username">Nama Pengguna</label>
         <input id="login-username" name="username" type="text" autocomplete="username" autocapitalize="none" required /></div>
       <div class="field"><label for="login-password">Kata Laluan</label>
         <input id="login-password" name="password" type="password" autocomplete="current-password" required /></div>
@@ -119,9 +127,18 @@
     </form>
 
     <form id="register-form" autocomplete="on" hidden>
+      <div class="field"><label for="reg-peranan">Peranan</label>
+        <select id="reg-peranan" name="peranan" required>
+          <option value="">Pilih peranan</option>
+          <option value="Guru">Guru</option>
+          <option value="Guru Disiplin">Guru Disiplin</option>
+          <option value="PK HEM">PK HEM</option>
+          <option value="Pengetua">Pengetua</option>
+        </select>
+        <small id="reg-role-hint">Guru: rekod kes sahaja. Guru Disiplin, PK HEM, Pengetua: akses penuh selepas diluluskan pentadbir.</small></div>
       <div class="field"><label for="reg-nama">Nama penuh</label>
         <input id="reg-nama" name="nama" type="text" autocomplete="name" minlength="3" maxlength="80" required /></div>
-      <div class="field"><label for="reg-username">Username</label>
+      <div class="field"><label for="reg-username">Nama Pengguna</label>
         <input id="reg-username" name="username" type="text" autocomplete="username" autocapitalize="none" pattern="[a-zA-Z0-9._]{3,30}" title="3-30 aksara: huruf, nombor, titik atau garis bawah" required />
         <small>Huruf, nombor, titik atau garis bawah (3-30 aksara).</small></div>
       <div class="field"><label for="reg-password">Kata laluan</label>
@@ -129,10 +146,7 @@
         <small>Sekurang-kurangnya 8 aksara.</small></div>
       <div class="field"><label for="reg-password2">Sahkan kata laluan</label>
         <input id="reg-password2" name="password2" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></div>
-      <div class="field"><label for="reg-kod">Kod pendaftaran sekolah</label>
-        <input id="reg-kod" name="kodDaftar" type="password" autocomplete="off" required />
-        <small>Dapatkan kod ini daripada pentadbir sekolah.</small></div>
-      <div class="action-row"><button type="submit">Daftar &amp; Log Masuk</button></div>
+      <div class="action-row"><button id="reg-submit" type="submit">Daftar Akaun</button></div>
     </form>
 
     <div id="login-status" class="status" role="status" aria-live="polite"></div>

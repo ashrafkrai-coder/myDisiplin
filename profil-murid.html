@@ -14,7 +14,7 @@
   <title>Profil Murid — myDisiplin</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="assets/theme.css" />
-  <link rel="stylesheet" href="assets/student-photos.css" />
+  <link rel="stylesheet" href="assets/student-picker.css" />
   <link rel="icon" href="icons/icon32.png" type="image/png" />
   <link rel="apple-touch-icon" href="icons/icon180.png" />
   <style>
@@ -28,8 +28,8 @@
   <main>
     <div class="hero">
       <div class="hero-text">
-        <h1>Profil &amp; Foto Murid</h1>
-        <p>Urus foto profil murid SMK Taman Medan</p>
+        <h1>Profil Murid</h1>
+        <p>Rekod disiplin setiap murid SMK Taman Medan</p>
       </div>
     </div>
 
@@ -37,13 +37,13 @@
       <a href="rekod-kes-baru.html">Rekod Kes Baru</a>
       <a href="senarai-kes.html">Senarai Kes</a>
       <a href="dashbord.html">Dashbord</a>
-      <a href="profil-murid.html" class="active">Profil &amp; Foto Murid</a>
+      <a href="profil-murid.html" class="active">Profil Murid</a>
     </div>
 
-    <p class="intro">Pilih kelas, kemudian tekan nama atau foto murid untuk mengurus foto profil.</p>
-    <div id="student-photo-picker" data-open="true"></div>
+    <p class="intro">Cari nama murid (atau pilih tingkatan dan kelas), kemudian tekan nama untuk melihat rekod disiplinnya. Halaman ini untuk Guru Disiplin, PK HEM dan Pengetua sahaja.</p>
+    <div id="student-picker" data-open="true"></div>
   </main>
-  <script src="assets/student-photos.js"></script>
+  <script src="assets/student-picker.js"></script>
   <script>
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
   </script>

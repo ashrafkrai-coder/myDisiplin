@@ -7,9 +7,11 @@ function createGas(options = {}) {
   const sheets = new Map();
   let uuid = 0;
   const log = { driveWrites: 0, trashed: [], locked: 0 };
+  const files = new Map(); // Drive file id -> { bytes, folder }
 
   class Sheet {
     constructor(name, rows) { this.name = name; this.rows = rows.map(r => r.slice()); }
+    getName() { return this.name; }
     getLastRow() { return this.rows.length; }
     getLastColumn() { return this.rows.reduce((m, r) => Math.max(m, r.length), 0); }
     getDataRange() {
@@ -46,27 +48,43 @@ function createGas(options = {}) {
         const input = Array.isArray(value) ? Buffer.from(value.map(b => b & 255)) : Buffer.from(String(value), 'utf8');
         return Array.from(crypto.createHash('sha256').update(input).digest()).map(b => b > 127 ? b - 256 : b);
       },
-      newBlob: (b, type, name) => (typeof b === 'string' ? { getBytes: () => Array.from(Buffer.from(b, 'utf8')).map(x => x > 127 ? x - 256 : x) } : b),
+      newBlob: (b, type, name) => (typeof b === 'string' ? { getBytes: () => Array.from(Buffer.from(b, 'utf8')).map(x => x > 127 ? x - 256 : x) } : { getBytes: () => b }),
       base64Decode: s => Array.from(Buffer.from(s, 'base64')),
       base64Encode: b => Buffer.from(b).toString('base64'),
       getUuid: () => crypto.randomUUID(),
       formatDate: () => '2026-01-01 00:00:00'
     },
     DriveApp: {
-      createFolder: () => ({ getId: () => 'folder', createFile: () => { log.driveWrites++; return { getId: () => 'file' + (++uuid) }; } }),
-      getFolderById: () => ({ createFile: () => { log.driveWrites++; return { getId: () => 'file' + (++uuid) }; } }),
-      getFileById: id => ({ getBlob: () => ({ getBytes: () => [255, 216, 255, 217] }), setTrashed: () => { log.trashed.push(id); } })
+      createFolder: () => folder('folder0001'),
+      getFolderById: id => folder(id),
+      getFileById: id => {
+        const f = files.get(id);
+        if (!f) throw new Error('not found');
+        const parents = [f.folder];
+        return { getBlob: () => ({ getBytes: () => f.bytes }), getParents: () => ({ hasNext: () => parents.length > 0, next: () => ({ getId: () => parents.shift() }) }) };
+      }
     }
   };
+  function folder(folderId) {
+    return {
+      getId: () => folderId,
+      createFile: blob => {
+        log.driveWrites++;
+        const id = 'file' + String(++uuid).padStart(8, '0');
+        files.set(id, { bytes: blob.getBytes(), folder: folderId });
+        return { getId: () => id };
+      }
+    };
+  }
   vm.createContext(context);
-  for (const f of options.files || ['Auth.gs', 'Photos.gs', 'Code.gs']) {
+  for (const f of options.files || ['Auth.gs', 'Students.gs', 'Evidence.gs', 'Code.gs']) {
     const src = fs.readFileSync(path.join(__dirname, '../gas', f), 'utf8');
     // `const` at top level of a script is not a property of the context object; expose via var.
     vm.runInContext(src.replace(/^const /gm, 'var '), context);
   }
 
   const post = body => JSON.parse(context.doPost({ postData: { contents: JSON.stringify(body) } }).getContent());
-  return { context, props, cache, sheets, log, post, Sheet };
+  return { context, props, cache, sheets, log, files, post, Sheet };
 }
 
 const STUDENTS = [

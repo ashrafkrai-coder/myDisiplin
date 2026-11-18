@@ -271,6 +271,7 @@
 <link rel="stylesheet" href="assets/dark.css" /><script src="assets/theme-toggle.js"></script>
 <link rel="stylesheet" href="assets/app-header.css" /><script src="assets/app-header.js" defer></script>
 <link rel="stylesheet" href="assets/desktop.css" />
+<link rel="stylesheet" href="assets/student-picker.css" />
 </head>
 <body>
   <main>
@@ -287,7 +288,7 @@
       <a href="rekod-kes-baru.html">Rekod Kes Baru</a>
       <a href="senarai-kes.html" class="active">Senarai Kes</a>
       <a href="dashbord.html">Dashbord</a>
-      <a href="profil-murid.html">Profil &amp; Foto Murid</a>
+      <a href="profil-murid.html">Profil Murid</a>
     </div>
 
     <!-- Filter Panel -->
@@ -423,6 +424,7 @@
               <span>📂 ${escapeHtml(item.jenis || "-")}${item.kategori ? " · " + escapeHtml(item.kategori) : ""}</span>
             </div>
             ${item.catatan ? `<div class="kes-catatan">💬 ${escapeHtml(item.catatan)}</div>` : ""}
+            ${item.bukti ? `<button type="button" class="secondary bukti-view-btn" data-row="${item.rowNumber}">📷 Lihat Gambar Bukti (${item.bukti})</button>` : ""}
             <div class="kes-status-row">
               <span class="kes-status-label">Tandakan Selesai</span>
               <label class="ios-toggle">
@@ -501,6 +503,7 @@
         const kategoriCol = findColumnIndex(headers, ["kategori"]);
         const catatanCol = findColumnIndex(headers, ["catatan", "keterangan", "butiran"]);
         const statusCol = findColumnIndex(headers, ["status"]);
+        const buktiCol = findColumnIndex(headers, ["bukti"]);
 
         latestRows = rows
           .map((row, index) => {
@@ -516,7 +519,8 @@
               jenis: jenisCol >= 0 ? cells[jenisCol] || "" : "",
               kategori: kategoriCol >= 0 ? cells[kategoriCol] || "" : "",
               catatan: catatanCol >= 0 ? cells[catatanCol] || "" : "",
-              status: statusCol >= 0 ? cells[statusCol] || "" : "Dalam Semakan"
+              status: statusCol >= 0 ? cells[statusCol] || "" : "Dalam Semakan",
+              bukti: buktiCol >= 0 && cells[buktiCol] ? cells[buktiCol].split(",").filter(Boolean).length : 0
             };
           })
           .filter((item) => item.nama || item.noKp || item.jenis || item.kategori || item.catatan);
@@ -550,6 +554,47 @@
           target.disabled = false;
           container.insertAdjacentHTML("afterbegin", "<div class='empty'>Status gagal dikemas kini.</div>");
         });
+    });
+
+    // Evidence photos are fetched only when asked for, one case at a time.
+    const buktiDialog = document.createElement("dialog");
+    buktiDialog.className = "profile-dialog bukti-viewer";
+    document.body.append(buktiDialog);
+
+    async function showBukti(rowNumber) {
+      const item = latestRows.find((row) => row.rowNumber === rowNumber);
+      buktiDialog.replaceChildren();
+      const title = document.createElement("h2");
+      title.textContent = "Gambar Bukti" + (item ? " — " + item.nama : "");
+      const body = document.createElement("div");
+      body.textContent = "Memuat gambar...";
+      const close = document.createElement("button");
+      close.type = "button";
+      close.textContent = "Tutup";
+      close.addEventListener("click", () => buktiDialog.close());
+      const actions = document.createElement("div");
+      actions.className = "profile-actions";
+      actions.append(close);
+      buktiDialog.append(title, body, actions);
+      if (!buktiDialog.open) buktiDialog.showModal();
+      try {
+        const result = await window.myDisiplinAuth.call("case_evidence", { rowNumber });
+        const photos = result.photos || [];
+        if (!photos.length) { body.textContent = "Gambar bukti tidak ditemui."; return; }
+        body.replaceChildren(...photos.map((src, i) => {
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = "Gambar bukti " + (i + 1);
+          return img;
+        }));
+      } catch (error) {
+        body.textContent = error.message;
+      }
+    }
+
+    container.addEventListener("click", (event) => {
+      const button = event.target.closest(".bukti-view-btn");
+      if (button) showBukti(Number(button.dataset.row));
     });
 
     filterNamaEl.addEventListener("input", applyFilters);

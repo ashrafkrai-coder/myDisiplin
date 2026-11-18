@@ -1,38 +1,59 @@
-# Sediakan akaun guru dan foto murid
+# Sediakan akaun, peranan dan gambar bukti kes
 
-Sistem ini menggantikan satu kod akses bersama dengan akaun guru yang mendaftar sendiri.
-Semua bacaan dan penulisan data melalui Apps Script, jadi Google Sheet boleh dijadikan **peribadi**.
+Setiap pengguna mendaftar sendiri mengikut peranan, tanpa kod pendaftaran. Semua bacaan dan penulisan data melalui Apps Script,
+jadi Google Sheet boleh dijadikan **peribadi**.
+
+## Peranan dan akses
+
+| Peranan | Selepas daftar | Akses |
+|---|---|---|
+| Guru | Terus aktif | **Rekod Kes Baru sahaja** (termasuk muat naik gambar bukti) |
+| Guru Disiplin | `menunggu` kelulusan pentadbir | Semua: Utama, Rekod Kes, Senarai Kes, Dashbord, Profil Murid, tukar status, lihat gambar bukti |
+| PK HEM | `menunggu` kelulusan pentadbir | Sama seperti Guru Disiplin |
+| Pengetua | `menunggu` kelulusan pentadbir | Sama seperti Guru Disiplin |
+
+**Meluluskan akaun:** dalam tab `guru`, tukar lajur `status` akaun itu daripada `menunggu` kepada `aktif` (dropdown).
+Pendaftaran terbuka dihadkan kepada 30 akaun baharu sejam untuk menyekat pendaftaran automatik.
+
+Had akses dikuatkuasakan di pelayan (Apps Script), bukan sekadar disembunyikan pada skrin.
 
 ## A. Kemas kini Apps Script (lakukan SEBELUM menerbitkan halaman baharu)
 
-1. Dalam projek Apps Script yang sama, pastikan ada tiga fail: `Code.gs`, `Photos.gs` dan **`Auth.gs`** (baharu). Salin kandungan daripada folder `gas/`.
-2. **Project Settings → Script Properties**, tambah:
-   - `REGISTER_CODE`: kod pendaftaran sekolah, sekurang-kurangnya 8 aksara. Beri hanya kepada guru yang dibenarkan. Tanpa kod ini pendaftaran ditutup.
-   - Kod `PHOTO_ACCESS_TOKEN` lama tidak lagi digunakan dan boleh dipadam.
-3. Jalankan fungsi `guruSheet_` sekali dari editor dan benarkan akses Sheets. Tab `guru` akan dicipta.
-4. **Deploy → Manage deployments → Edit → Version: New version → Deploy.** Gunakan deployment sedia ada supaya URL kekal.
+1. Dalam projek Apps Script, fail mestilah: `Code.gs`, `Auth.gs`, **`Students.gs`**, **`Evidence.gs`** dan **`Diagnostik.gs`** (tiga terakhir baharu).
+   Salin kandungan daripada folder `gas/`. **Padam fail `Photos.gs`**; fungsi foto murid telah dibuang.
+2. **Project Settings → Script Properties** (pilihan, pembersihan): `REGISTER_CODE`, `PHOTO_FOLDER_ID` dan semua property `photo_...` tidak lagi digunakan dan boleh dipadam.
+3. **Deploy → Manage deployments → Edit → Version: New version → Deploy.** Gunakan deployment sedia ada supaya URL kekal.
+   Kali pertama gambar bukti dimuat naik, Google akan meminta kebenaran Drive. Pemilik skrip perlu benarkan.
 
-> Server lama menganggap sebarang tindakan tidak dikenali sebagai "tambah rekod". Jangan terbitkan halaman baharu ke GitHub Pages sebelum langkah 4 siap.
+## B. Akaun sedia ada
 
-## B. Selepas deploy
-
-1. Buka `login.html` → tab **Daftar Akaun** → isi nama, username, kata laluan dan kod pendaftaran.
-2. Setiap guru mendaftar sendiri. Semua guru melihat semua kelas dan semua murid.
-3. Jadikan Google Sheet **peribadi**: Share → General access → *Restricted*. Aplikasi tidak lagi membaca sheet terus.
+- Tab `guru` mendapat lajur baharu `peranan` secara automatik. Akaun lama tanpa peranan dikira **Guru**.
+- Untuk menaikkan peranan akaun sedia ada: taip `Guru Disiplin`, `PK HEM` atau `Pengetua` dalam lajur `peranan`. Berkuat kuasa dalam 5 minit.
+- Semua pengguna perlu log masuk semula sekali selepas kemas kini ini.
 
 ## Pengurusan akaun (tab `guru`)
 
 | Tindakan | Cara |
 |---|---|
-| Nyahaktifkan guru | Tukar lajur `status` kepada `tidak aktif`. Berkuat kuasa dalam 5 minit. |
+| Luluskan Guru Disiplin / PK HEM / Pengetua | Tukar `status` daripada `menunggu` kepada `aktif` |
+| Tukar peranan | Ubah lajur `peranan` (dropdown) |
+| Nyahaktifkan pengguna | Tukar lajur `status` kepada `tidak aktif`. Berkuat kuasa dalam 5 minit. |
 | Aktifkan semula | Tukar `status` kepada `aktif` |
-| Guru lupa kata laluan | Padam barisnya; guru mendaftar semula dengan username yang sama |
-| Lihat siapa log masuk terakhir | Lajur `login_terakhir` |
+| Lupa kata laluan | Padam barisnya; pengguna mendaftar semula dengan username yang sama |
+| Lihat log masuk terakhir | Lajur `login_terakhir` |
 
-Kata laluan disimpan sebagai hash bergaram, bukan teks biasa. Lima percubaan gagal mengunci username selama 15 minit.
-Sesi tamat selepas 6 jam. Lajur `dicipta_oleh` dalam tab "Rekod kes baru" merekod username guru yang menaip setiap kes.
+Kata laluan disimpan sebagai hash bergaram. Lima percubaan gagal mengunci username selama 15 minit. Sesi tamat selepas 6 jam.
 
-## Foto murid
+## Gambar bukti kes
 
-Foto disimpan dalam folder Drive `myDisiplin Foto Murid` (persendirian). ID fail disimpan dalam Script Properties.
-Hanya guru yang telah log masuk boleh melihat, memuat naik atau memadam foto. Tiada pengecaman wajah.
+- Dalam **Rekod Kes Baru → Butiran Kes**, tekan **Ambil Gambar** (kamera) atau **Pilih dari Galeri**. Maksimum 3 gambar bagi setiap kes.
+  Gambar dikecilkan (maksimum 1280px, JPEG) sebelum dihantar.
+- Gambar disimpan dalam folder Drive peribadi `myDisiplin Bukti Kes`. ID fail ditulis dalam lajur `bukti` tab "Rekod kes baru".
+- Hanya Guru Disiplin, PK HEM dan Pengetua boleh melihatnya: **Senarai Kes → Lihat Gambar Bukti**.
+- Lajur `dicipta_oleh` merekod username yang menaip setiap kes.
+
+## Uji sambungan
+
+Dalam editor Apps Script, pilih fungsi **`ujiSambungan`** → **Run** → buka **Execution log**.
+Ia menyemak Google Sheet, tab dan header, senarai murid, akaun dan peranan (termasuk akaun yang menunggu kelulusan) dan folder Drive gambar bukti.
+Setiap baris bertanda `LULUS` atau `GAGAL` dengan sebabnya.

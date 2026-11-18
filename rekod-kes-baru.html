@@ -37,6 +37,16 @@
       border-bottom: none;
     }
 
+    /* Tingkatan and Kelas side by side */
+    .field-pair {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+      border-bottom: 1px solid var(--ios-separator);
+    }
+    .field-pair:last-child { border-bottom: none; }
+    .field-pair .field-row { border-bottom: none; min-width: 0; }
+    .field-pair .field-row + .field-row { border-left: 1px solid var(--ios-separator); }
+
     .field-row label {
       font-size: 12px;
       font-weight: 600;
@@ -187,7 +197,7 @@
       transform: none;
     }
   </style>
-  <link rel="stylesheet" href="assets/student-photos.css" />
+  <link rel="stylesheet" href="assets/student-picker.css" />
 <link rel="stylesheet" href="assets/dark.css" /><script src="assets/theme-toggle.js"></script>
 <link rel="stylesheet" href="assets/app-header.css" /><script src="assets/app-header.js" defer></script>
 <link rel="stylesheet" href="assets/desktop.css" />
@@ -207,23 +217,29 @@
       <a href="rekod-kes-baru.html" class="active">Rekod Kes Baru</a>
       <a href="senarai-kes.html">Senarai Kes</a>
       <a href="dashbord.html">Dashbord</a>
-      <a href="profil-murid.html">Profil &amp; Foto Murid</a>
+      <a href="profil-murid.html">Profil Murid</a>
     </div>
 
-    <div id="student-photo-picker"></div>
     <!-- Form -->
     <p class="section-label">Maklumat Murid</p>
     <div class="form-card">
+      <!-- Search by name (optionally narrowed by Tingkatan and Kelas), then tap a name: the rest is filled in. -->
+      <div id="student-picker" class="field-row"></div>
+      <div class="field-pair">
       <div class="field-row">
-        <label for="nama">Nama Murid</label>
-        <input id="nama" type="text" placeholder="Contoh: Ali Bin Abu" />
-      </div>
-      <div class="field-row">
-        <label for="nokp">No Kad Pengenalan</label>
-        <input id="nokp" type="text" placeholder="Contoh: 090101011234" />
+        <label for="tingkatan">Tingkatan</label>
+        <select id="tingkatan">
+          <option value="">Pilih</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
       </div>
       <div class="field-row">
         <label for="kelas">Kelas</label>
+        <!-- Full list; the script below shows only the chosen Tingkatan's classes. Values stay "1 AMANAH". -->
         <select id="kelas">
           <option value="">Sila pilih kelas</option>
           <optgroup label="Tingkatan 1">
@@ -252,6 +268,15 @@
             <option>5 IKHLAS</option><option>5 JUJUR</option><option>5 PVMA</option>
           </optgroup>
         </select>
+      </div>
+      </div>
+      <div class="field-row">
+        <label for="nama">Nama Murid</label>
+        <input id="nama" type="text" placeholder="Contoh: Ali Bin Abu" />
+      </div>
+      <div class="field-row">
+        <label for="nokp">No Kad Pengenalan</label>
+        <input id="nokp" type="text" placeholder="Contoh: 090101011234" />
       </div>
     </div>
 
@@ -300,6 +325,17 @@
         <label for="catatan">Catatan / Butiran Kes</label>
         <textarea id="catatan" rows="4" placeholder="Masukkan butiran kes..."></textarea>
       </div>
+      <div class="field-row">
+        <label>Gambar Bukti (pilihan, maksimum 3)</label>
+        <div class="bukti-actions">
+          <button id="bukti-camera-btn" type="button" class="secondary">📷 Ambil Gambar</button>
+          <button id="bukti-file-btn" type="button" class="secondary">🖼️ Pilih dari Galeri</button>
+        </div>
+        <input id="bukti-camera" type="file" accept="image/*" capture="environment" hidden />
+        <input id="bukti-file" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden />
+        <div id="bukti-grid" class="bukti-grid"></div>
+        <p id="bukti-hint" class="bukti-hint">Gambar disimpan secara peribadi dan hanya boleh dilihat oleh Guru Disiplin, PK HEM dan Pengetua.</p>
+      </div>
     </div>
 
     <!-- Save Button -->
@@ -325,7 +361,6 @@
     // Records that could not be sent yet. Only unsent records are kept on the device; each is
     // removed as soon as the server accepts it.
     const PENDING_KEY = "mydisiplin_kes_pending";
-    const SHEET_TAB = "Rekod kes baru";
 
     const namaEl = document.getElementById("nama");
     const noKpEl = document.getElementById("nokp");
@@ -334,6 +369,12 @@
     const jenisKesalahanEl = document.getElementById("jenis-kesalahan");
     const kategoriEl = document.getElementById("kategori");
     const catatanEl = document.getElementById("catatan");
+    const buktiGridEl = document.getElementById("bukti-grid");
+    const buktiHintEl = document.getElementById("bukti-hint");
+    const buktiCameraEl = document.getElementById("bukti-camera");
+    const buktiFileEl = document.getElementById("bukti-file");
+    const buktiCameraBtn = document.getElementById("bukti-camera-btn");
+    const buktiFileBtn = document.getElementById("bukti-file-btn");
     const simpanBtn = document.getElementById("simpan-btn");
     const progressWrapEl = document.getElementById("progress-wrap");
     const progressBarEl = document.getElementById("progress-bar");
@@ -361,16 +402,127 @@
 
       if (nama) namaEl.value = nama;
       if (noKp) noKpEl.value = noKp;
-      if (kelas) {
-        const inputKey = normalizeKelas(kelas);
-        const exactMatch = Array.from(kelasEl.options).find((o) => o.value === kelas);
-        const normalizedMatch = Array.from(kelasEl.options).find((o) => normalizeKelas(o.value) === inputKey);
-        const matchedOption = exactMatch || normalizedMatch;
-        kelasEl.value = matchedOption ? matchedOption.value : "";
+      if (kelas) setKelas(kelas);
+    }
+
+    // ── Separate Tingkatan and Kelas dropdowns ──
+    // The class list comes from the optgroups in the HTML; the Kelas dropdown shows only the chosen
+    // Tingkatan's classes (by name), while each option's value stays the full name such as "1 AMANAH".
+    const tingkatanEl = document.getElementById("tingkatan");
+    const ALL_KELAS = Array.from(kelasEl.querySelectorAll("option")).map((o) => o.value).filter(Boolean);
+    const tingkatanOf = (value) => (String(value).trim().match(/^\d+/) || [""])[0];
+
+    function showKelasFor(tingkatan, selected) {
+      kelasEl.replaceChildren(new Option(tingkatan ? "Sila pilih kelas" : "Pilih tingkatan dahulu", ""));
+      ALL_KELAS.filter((k) => tingkatanOf(k) === tingkatan)
+        .forEach((k) => kelasEl.add(new Option(k.replace(/^\d+\s*/, ""), k)));
+      kelasEl.disabled = !tingkatan;
+      kelasEl.value = selected || "";
+    }
+
+    // Sets both dropdowns from a full class name; accepts "1 al farabi" for "1 AL-FARABI".
+    function setKelas(value) {
+      let match = ALL_KELAS.find((k) => normalizeKelas(k) === normalizeKelas(value)) || "";
+      // A class from the student list that is not in the built-in list (e.g. a new class) is added.
+      if (!match && tingkatanOf(value)) {
+        match = String(value).trim().toUpperCase();
+        ALL_KELAS.push(match);
+        const t = tingkatanOf(match);
+        if (!Array.from(tingkatanEl.options).some((o) => o.value === t)) tingkatanEl.add(new Option(t, t));
+      }
+      tingkatanEl.value = tingkatanOf(match);
+      showKelasFor(tingkatanEl.value, match);
+    }
+    window.myDisiplinSetKelas = setKelas;
+
+    tingkatanEl.addEventListener("change", () => showKelasFor(tingkatanEl.value, ""));
+    showKelasFor("", "");
+
+    applyPrefillFromQuery();
+
+    if (new URLSearchParams(window.location.search).get("akses") === "terhad") {
+      statusEl.textContent = "Akaun Guru hanya boleh merekod kes disiplin. Menu lain untuk Guru Disiplin, PK HEM dan Pengetua.";
+      statusEl.className = "error";
+    }
+
+    // ── Evidence photos (gambar bukti) ──
+    // Each photo is shrunk to at most 1280px and re-encoded as JPEG before upload.
+    const MAX_BUKTI = 3;
+    const BUKTI_HINT = buktiHintEl.textContent;
+    let bukti = [];
+
+    async function compressBukti(file) {
+      if (!/^image\//.test(file.type)) throw new Error("Fail bukan gambar.");
+      if (file.size > 20 * 1024 * 1024) throw new Error("Gambar terlalu besar (had 20 MB).");
+      const url = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = url;
+        try { await image.decode(); } catch { throw new Error("Gambar rosak atau format tidak disokong. Cuba gambar lain."); }
+        let quality = 0.72;
+        let size = 1280;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          const scale = Math.min(1, size / Math.max(image.naturalWidth, image.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+          const data = canvas.toDataURL("image/jpeg", quality);
+          if (data.length <= 380000) return data;
+          size = Math.round(size * 0.8);
+          quality -= 0.08;
+        }
+        throw new Error("Gambar masih terlalu besar selepas dimampatkan.");
+      } finally {
+        URL.revokeObjectURL(url);
       }
     }
 
-    applyPrefillFromQuery();
+    function renderBukti() {
+      buktiGridEl.replaceChildren();
+      bukti.forEach((data, index) => {
+        const box = document.createElement("div");
+        box.className = "bukti-thumb";
+        const img = document.createElement("img");
+        img.src = data;
+        img.alt = "Gambar bukti " + (index + 1);
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", "Buang gambar bukti " + (index + 1));
+        remove.addEventListener("click", () => { bukti.splice(index, 1); renderBukti(); });
+        box.append(img, remove);
+        buktiGridEl.append(box);
+      });
+      const full = bukti.length >= MAX_BUKTI;
+      buktiCameraBtn.disabled = full;
+      buktiFileBtn.disabled = full;
+      buktiHintEl.textContent = bukti.length ? bukti.length + "/" + MAX_BUKTI + " gambar dilampirkan. " + BUKTI_HINT : BUKTI_HINT;
+    }
+
+    async function addBukti(input) {
+      const files = Array.from(input.files || []);
+      input.value = "";
+      for (const file of files) {
+        if (bukti.length >= MAX_BUKTI) {
+          buktiHintEl.textContent = "Maksimum " + MAX_BUKTI + " gambar bukti bagi setiap kes.";
+          break;
+        }
+        try {
+          buktiHintEl.textContent = "Memproses gambar...";
+          bukti.push(await compressBukti(file));
+          renderBukti();
+        } catch (error) {
+          renderBukti();
+          buktiHintEl.textContent = error.message;
+        }
+      }
+    }
+
+    buktiCameraBtn.addEventListener("click", () => buktiCameraEl.click());
+    buktiFileBtn.addEventListener("click", () => buktiFileEl.click());
+    buktiCameraEl.addEventListener("change", () => addBukti(buktiCameraEl));
+    buktiFileEl.addEventListener("change", () => addBukti(buktiFileEl));
 
     function formatTarikhMalay(yyyyMmDd) {
       const parts = yyyyMmDd.split("-");
@@ -387,11 +539,15 @@
       } catch { return []; }
     }
 
+    // Returns false when the device storage is full (evidence photos are large).
     function savePending(list) {
       try {
         if (list.length) localStorage.setItem(PENDING_KEY, JSON.stringify(list));
         else localStorage.removeItem(PENDING_KEY);
-      } catch {}
+        return true;
+      } catch {
+        return false;
+      }
     }
 
     // Sends queued records oldest first; stops at the first failure and tries again later.
@@ -452,19 +608,10 @@
     const lateLevel = (count) => (count <= 3 ? "Ringan" : count <= 15 ? "Sederhana" : "Berat");
     let autoSeq = 0;
 
+    // Counted on the server, so a Guru can grade lateness without reading the case list.
     async function countPriorLate(noKp) {
-      const table = await window.myDisiplinAuth.sheetTable(SHEET_TAB);
-      const headers = table.headers.map((h) => String(h).trim().toLowerCase());
-      const kpCol = headers.indexOf("no_kp");
-      const jenisCol = headers.indexOf("jenis_kesalahan");
-      if (kpCol < 0 || jenisCol < 0) return 0;
-      const key = digitsOnly(noKp);
-      return table.rows.filter((row) => {
-        const cells = row.c || [];
-        const kp = cells[kpCol] && cells[kpCol].v != null ? String(cells[kpCol].v) : "";
-        const jenis = cells[jenisCol] && cells[jenisCol].v != null ? String(cells[jenisCol].v) : "";
-        return digitsOnly(kp) === key && jenis.trim().toUpperCase() === LATE_TYPE;
-      }).length;
+      const result = await window.myDisiplinAuth.call("late_count", { noKp: digitsOnly(noKp) });
+      return Number(result.count) || 0;
     }
 
     // Returns the category for a lateness record, or null when it does not apply.
@@ -535,19 +682,27 @@
         tarikh: formatTarikhMalay(tarikh),
         masa: now.toLocaleTimeString("ms-MY"),
         nama, noKp, kelas, jenisKesalahan, kategori, catatan,
-        status: "Dalam Semakan"
+        status: "Dalam Semakan",
+        bukti: bukti.slice()
       };
 
       setProgress(60, "Menghantar ke Google Sheet...", "loading");
       const syncResult = await sendToGoogleSheet(record);
       const sent = syncResult.ok;
-      if (!sent) savePending(getPending().concat([record]));
+      let storedWithoutBukti = false;
+      if (!sent && !savePending(getPending().concat([record]))) {
+        // Device storage is full: keep the case itself, without its photos.
+        savePending(getPending().concat([{ ...record, bukti: [] }]));
+        storedWithoutBukti = record.bukti.length > 0;
+      }
 
       setProgress(90, "Memuktamadkan...", "loading");
 
       namaEl.value = "";
       noKpEl.value = "";
-      window.myDisiplinPhotoPicker?.resetAfterSave();
+      window.myDisiplinStudentPicker?.resetAfterSave();
+      bukti = [];
+      renderBukti();
       tarikhEl.value = todayLocal();
       jenisKesalahanEl.selectedIndex = 0;
       catatanEl.value = "";
@@ -557,7 +712,8 @@
       setProgress(100,
         sent
           ? "Rekod berjaya disimpan dan dihantar ke Google Sheet."
-          : `Rekod belum dihantar (${syncResult.error || "ralat tidak diketahui"}). Rekod disimpan dalam peranti ini dan akan dihantar semula secara automatik apabila talian pulih.`,
+          : `Rekod belum dihantar (${syncResult.error || "ralat tidak diketahui"}). Rekod disimpan dalam peranti ini dan akan dihantar semula secara automatik apabila talian pulih.` +
+            (storedWithoutBukti ? " Storan peranti penuh: gambar bukti TIDAK disimpan." : ""),
         sent ? "success" : "error"
       );
 
@@ -566,9 +722,18 @@
       if (sent) flushPending();
     });
 
+    // Retry unsent records: when the browser reports it is online, when the app comes back to the
+    // screen, and every 20 seconds while any are waiting (the "online" event can fire before the
+    // connection actually works, and then nothing would retry until the page is reopened).
     window.addEventListener("online", flushPending);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") flushPending();
+    });
+    setInterval(() => {
+      if (navigator.onLine !== false && getPending().length) flushPending();
+    }, 20000);
     flushPending();
   </script>
-  <script src="assets/student-photos.js"></script>
+  <script src="assets/student-picker.js"></script>
 </body>
 </html>

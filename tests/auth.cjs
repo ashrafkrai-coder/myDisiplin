@@ -1,93 +1,163 @@
 const assert = require('node:assert/strict');
 const { createGas, STUDENTS, CASES } = require('./gas-mock.cjs');
 
-const REG = 'kod-sekolah-2026';
-const gas = createGas({ props: { REGISTER_CODE: REG }, sheets: { data: STUDENTS, 'Rekod kes baru': CASES } });
-const { post, sheets, props, cache } = gas;
-const good = { username: 'cikgu.aini', nama: 'Aini Binti Ali', password: 'RahsiaBesar1', kodDaftar: REG };
+const gas = createGas({ sheets: { data: STUDENTS, 'Rekod kes baru': CASES } });
+const { post, sheets, cache, files } = gas;
+const good = { username: 'cikgu.aini', nama: 'Aini Binti Ali', password: 'RahsiaBesar1', peranan: 'Guru' };
+const same = (a, b, msg) => assert.equal(JSON.stringify(a), JSON.stringify(b), msg); // vm arrays are another realm
+const JPEG = 'data:image/jpeg;base64,/9j/2Q==';
 
-// --- Registration ---
-let r = post({ action: 'register', ...good, kodDaftar: 'salah' });
-assert.equal(r.ok, false); assert.match(r.error, /Kod pendaftaran/);
-assert.equal(sheets.has('guru'), false, 'wrong code must not create the guru tab');
+// --- Registration: no code needed ---
+let r;
+assert.match(post({ action: 'register', ...good, peranan: '' }).error, /Pilih peranan/);
+assert.match(post({ action: 'register', ...good, peranan: 'Admin' }).error, /Pilih peranan/);
 for (const bad of [{ username: 'AB' }, { username: 'a b c' }, { nama: 'Al' }, { password: 'pendek' }]) {
   r = post({ action: 'register', ...good, ...bad });
   assert.equal(r.ok, false, JSON.stringify(bad));
 }
 r = post({ action: 'register', ...good });
-assert.equal(r.ok, true); assert.match(r.session, /^[a-f0-9]{64}$/); assert.equal(r.username, 'cikgu.aini');
+assert.equal(r.ok, true); assert.match(r.session, /^[a-f0-9]{64}$/); assert.equal(r.username, 'cikgu.aini'); assert.equal(r.peranan, 'Guru');
+const guruSession = r.session;
 const guruRows = sheets.get('guru').rows;
-assert.equal(guruRows.length, 2);
+same(guruRows[0].slice(-1), ['peranan']);
 assert.ok(!guruRows[1].includes(good.password), 'password must not be stored in plain text');
-assert.equal(guruRows[1][4], 'aktif');
+assert.equal(guruRows[1][4], 'aktif'); assert.equal(guruRows[1][7], 'Guru');
 r = post({ action: 'register', ...good, username: 'CIKGU.AINI' });
 assert.equal(r.ok, false); assert.match(r.error, /sudah digunakan/);
 
-// Registration closed when the code is not configured or too short.
-const closed = createGas({ sheets: { data: STUDENTS } });
-assert.match(closed.post({ action: 'register', ...good }).error, /belum dibuka/);
+// Senior roles register as 'menunggu' (pending), get no session and cannot log in until approved.
+for (const peranan of ['Guru Disiplin', 'pk hem', 'PENGETUA']) {
+  const username = 'x.' + peranan.replace(/\W/g, '').toLowerCase();
+  r = post({ action: 'register', ...good, username, peranan });
+  assert.equal(r.ok, true, peranan); assert.equal(r.pending, true, peranan); assert.equal(r.session, undefined, peranan);
+  assert.match(r.message, /menunggu kelulusan/);
+  assert.match(post({ action: 'login', username, password: good.password }).error, /menunggu kelulusan/, peranan);
+}
+r = post({ action: 'register', ...good, username: 'pk.hem', nama: 'Encik PK HEM', peranan: 'pk hem' });
+assert.equal(r.peranan, 'PK HEM', 'role spelling is normalised');
+const pkRow = sheets.get('guru').rows.find(row => row[0] === 'pk.hem');
+assert.equal(pkRow[4], 'menunggu'); assert.equal(pkRow[7], 'PK HEM');
+// Admin approves by setting status to 'aktif'.
+pkRow[4] = 'aktif';
+r = post({ action: 'login', username: 'pk.hem', password: good.password });
+assert.equal(r.ok, true); assert.equal(r.peranan, 'PK HEM');
+const staffSession = r.session;
+
+// Open registration is rate-limited per hour.
+const flood = createGas({ sheets: { data: STUDENTS } });
+for (let i = 0; i < 30; i++) assert.equal(flood.post({ action: 'register', ...good, username: 'spam' + i }).ok, true);
+assert.match(flood.post({ action: 'register', ...good, username: 'spam30' }).error, /Terlalu banyak pendaftaran/);
 
 // --- Login ---
 r = post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1' });
-assert.equal(r.ok, true);
-const session = r.session;
+assert.equal(r.ok, true); assert.equal(r.peranan, 'Guru');
 assert.equal(post({ action: 'login', username: 'cikgu.aini', password: 'salah' }).ok, false);
-assert.equal(post({ action: 'login', username: 'tiada.orang', password: 'x' }).error, 'Username atau kata laluan tidak sah.');
-assert.equal(post({ action: 'login', username: 'cikgu.aini', password: 'salah' }).error, 'Username atau kata laluan tidak sah.',
+assert.equal(post({ action: 'login', username: 'tiada.orang', password: 'x' }).error, 'Nama pengguna atau kata laluan tidak sah.');
+assert.equal(post({ action: 'login', username: 'cikgu.aini', password: 'salah' }).error, 'Nama pengguna atau kata laluan tidak sah.',
   'wrong password and unknown user must give the same message');
 
+// The role chosen at login must match the account; a mismatch is only revealed after a correct password.
+assert.equal(post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1', peranan: 'Guru' }).ok, true);
+assert.match(post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1', peranan: 'Pengetua' }).error, /tidak sepadan.*Guru/);
+assert.equal(post({ action: 'login', username: 'cikgu.aini', password: 'salah', peranan: 'Pengetua' }).error, 'Nama pengguna atau kata laluan tidak sah.');
+assert.equal(post({ action: 'login', username: 'pk.hem', password: 'RahsiaBesar1', peranan: 'pk hem' }).ok, true, 'role spelling is normalised at login');
+
+// Accounts created before roles existed (7 columns) log in as Guru.
+const legacy = createGas({ sheets: { data: STUDENTS } });
+legacy.post({ action: 'register', ...good });
+legacy.sheets.get('guru').rows.forEach(row => row.splice(7));
+r = legacy.post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1' });
+assert.equal(r.ok, true); assert.equal(r.peranan, 'Guru');
+
 // --- Every non-auth action needs a session ---
-for (const action of ['sheet_table', 'photo_students', 'photo_batch', 'photo_cases', 'photo_save', 'photo_delete', 'update_status', 'append']) {
-  r = post({ action, tab: 'data', noKps: [] });
+for (const action of ['whoami', 'sheet_table', 'student_list', 'late_count', 'student_cases', 'case_evidence', 'update_status', 'append']) {
+  r = post({ action, tab: 'data' });
   assert.equal(r.ok, false, action); assert.equal(r.code, 'SESSION', action);
 }
-r = post({ action: 'sheet_table', tab: 'data', session: 'f'.repeat(64) });
-assert.equal(r.code, 'SESSION', 'unknown session must be rejected');
+assert.equal(post({ action: 'sheet_table', tab: 'data', session: 'f'.repeat(64) }).code, 'SESSION', 'unknown session must be rejected');
+assert.equal(post({ action: 'photo_students', session: staffSession }).ok, false, 'student photo actions are gone');
 
-// --- Data reads ---
-r = post({ action: 'sheet_table', tab: 'data', session });
-assert.equal(r.ok, true); assert.equal(r.rows.length, 2); assert.equal(r.headers[1], 'NAMA');
-r = post({ action: 'sheet_table', tab: 'Rekod kes baru', session });
-assert.equal(r.rows[0][4], 'MURID UJIAN');
-r = post({ action: 'sheet_table', tab: 'guru', session });
-assert.equal(r.ok, false, 'guru tab (hashes) must never be readable');
-assert.match(r.error, /tidak dibenarkan/);
+// --- Guru: may record cases only ---
+const asGuru = p => post({ session: guruSession, ...p });
+assert.equal(asGuru({ action: 'whoami' }).peranan, 'Guru');
+assert.equal(asGuru({ action: 'student_list' }).students.length, 2, 'Guru needs the roster to pick a student');
+assert.equal(asGuru({ action: 'late_count', noKp: '090101010001' }).count, 0);
+assert.equal(asGuru({ action: 'sheet_table', tab: 'data' }).ok, true);
+for (const p of [{ action: 'sheet_table', tab: 'Rekod kes baru' }, { action: 'student_cases', noKp: '090101010001' },
+  { action: 'case_evidence', rowNumber: 2 }, { action: 'update_status', rowNumber: 2, status: 'Selesai' }]) {
+  r = asGuru(p);
+  assert.equal(r.ok, false, p.action); assert.equal(r.code, 'ROLE', p.action);
+}
+assert.equal(sheets.get('Rekod kes baru').rows[1][9], 'Selesai', 'refused update must not change the sheet');
 
-// --- Writes record who typed them, and cannot redirect to another sheet/tab ---
-r = post({ action: 'append', session, noKp: '100202020002', nama: 'MURID DUA', kelas: '2 AMANAH', tarikh: '2026-10-15', masa: '08:00',
-  jenisKesalahan: 'Lewat', kategori: 'Ringan', catatan: 'x', status: 'Dalam Semakan', sheetId: 'orang-lain', tab: 'guru' });
-assert.equal(r.ok, true); assert.equal(r.tab, 'Rekod kes baru');
+// --- Recording a case, with evidence photos ---
+const guruCount = sheets.get('guru').rows.length;
+r = asGuru({ action: 'append', noKp: '100202020002', nama: 'MURID DUA', kelas: '2 AMANAH', tarikh: '2026-10-15', masa: '08:00',
+  jenisKesalahan: 'TINGKAH LAKU TIDAK PENTINGKAN MASA', kategori: 'Ringan', catatan: 'x', status: 'Dalam Semakan',
+  sheetId: 'orang-lain', tab: 'guru', bukti: [JPEG, JPEG] });
+assert.equal(r.ok, true); assert.equal(r.tab, 'Rekod kes baru'); assert.equal(r.bukti, 2);
 const caseRows = sheets.get('Rekod kes baru').rows;
-assert.equal(caseRows[0][11], 'dicipta_oleh', 'legacy header gains the recorder column');
+same(caseRows[0].slice(11), ['dicipta_oleh', 'bukti'], 'legacy header gains the new columns');
 assert.equal(caseRows[2][11], 'cikgu.aini');
-assert.equal(sheets.get('guru').rows.length, 2, 'payload.tab must not redirect writes');
-r = post({ action: 'update_status', session, rowNumber: 2, status: 'Dalam Semakan' });
-assert.equal(r.ok, true); assert.equal(caseRows[1][9], 'Dalam Semakan');
-assert.equal(post({ action: 'update_status', session, rowNumber: 1, status: 'x' }).ok, false);
+assert.equal(caseRows[2][12].split(',').length, 2);
+assert.equal(sheets.get('guru').rows.length, guruCount, 'payload.tab must not redirect writes');
+assert.equal(asGuru({ action: 'late_count', noKp: '100202020002' }).count, 1);
 
-// --- Photos work with a session and fail without ---
-r = post({ action: 'photo_students', session });
-assert.equal(r.ok, true); assert.equal(r.students.length, 2);
+// Bad evidence is refused before anything is written.
+const before = caseRows.length, driveBefore = files.size;
+for (const bukti of [[JPEG, JPEG, JPEG, JPEG], ['data:image/png;base64,AAAA'], ['data:image/jpeg;base64,AAAA'], ['data:image/jpeg;base64,' + 'a'.repeat(400000)], 'x']) {
+  r = asGuru({ action: 'append', noKp: '1', nama: 'Y', bukti });
+  assert.equal(r.ok, false, String(bukti).slice(0, 30));
+}
+assert.equal(caseRows.length, before); assert.equal(files.size, driveBefore);
+assert.equal(asGuru({ action: 'append', noKp: '1', nama: 'Tanpa Bukti' }).ok, true, 'evidence is optional');
+assert.equal(caseRows[caseRows.length - 1][12], '');
+
+// --- Staff roles: full access ---
+const asStaff = p => post({ session: staffSession, ...p });
+r = asStaff({ action: 'sheet_table', tab: 'Rekod kes baru' });
+assert.equal(r.ok, true); assert.equal(r.rows[0][4], 'MURID UJIAN');
+assert.match(asStaff({ action: 'sheet_table', tab: 'guru' }).error, /tidak dibenarkan/, 'guru tab (hashes) is never readable');
+r = asStaff({ action: 'student_cases', noKp: '100202020002' });
+assert.equal(r.student.nama, 'MURID DUA'); assert.equal(r.cases.length, 1); assert.equal(r.cases[0].bukti, 2);
+assert.equal(asStaff({ action: 'student_cases', noKp: '090101010001' }).cases[0].jenis, 'KEKEMASAN DIRI');
+r = asStaff({ action: 'case_evidence', rowNumber: 3 });
+same(r.photos, [JPEG, JPEG]);
+same(asStaff({ action: 'case_evidence', rowNumber: 2 }).photos, [], 'case without evidence');
+assert.equal(asStaff({ action: 'case_evidence', rowNumber: 99 }).ok, false);
+// A file ID typed into the sheet that is outside the evidence folder is not served.
+files.set('outsider0001', { bytes: [255, 216, 255, 217], folder: 'other-folder' });
+caseRows[2][12] = 'outsider0001';
+same(asStaff({ action: 'case_evidence', rowNumber: 3 }).photos, []);
+r = asStaff({ action: 'update_status', rowNumber: 2, status: 'Dalam Semakan' });
+assert.equal(r.ok, true); assert.equal(caseRows[1][9], 'Dalam Semakan');
+assert.equal(asStaff({ action: 'update_status', rowNumber: 1, status: 'x' }).ok, false);
+
+// --- Role changes in the sheet apply after the 5 minute cache ---
+sheets.get('guru').rows[1][7] = 'Guru Disiplin';
+cache.delete('role_cikgu.aini');
+assert.equal(asGuru({ action: 'whoami' }).peranan, 'Guru Disiplin');
+assert.equal(asGuru({ action: 'sheet_table', tab: 'Rekod kes baru' }).ok, true);
+sheets.get('guru').rows[1][7] = 'Guru';
+cache.delete('role_cikgu.aini');
 
 // --- Logout ends the session ---
-assert.equal(post({ action: 'logout', session }).ok, true);
-assert.equal(post({ action: 'sheet_table', tab: 'data', session }).code, 'SESSION');
+assert.equal(post({ action: 'logout', session: staffSession }).ok, true);
+assert.equal(asStaff({ action: 'sheet_table', tab: 'data' }).code, 'SESSION');
 
-// --- Disabling an account ends its sessions (after the 5 minute active-check cache) ---
-r = post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1' });
-const s2 = r.session;
-assert.equal(post({ action: 'sheet_table', tab: 'data', session: s2 }).ok, true);
+// --- Disabling an account ends its sessions (after the 5 minute cache) ---
+assert.equal(asGuru({ action: 'sheet_table', tab: 'data' }).ok, true);
 sheets.get('guru').rows[1][4] = 'tidak aktif';
-cache.delete('act_cikgu.aini'); // simulate the 5 minute re-check
-assert.equal(post({ action: 'sheet_table', tab: 'data', session: s2 }).code, 'SESSION');
+cache.delete('role_cikgu.aini');
+assert.equal(asGuru({ action: 'sheet_table', tab: 'data' }).code, 'SESSION');
 assert.match(post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1' }).error, /tidak aktif/);
 sheets.get('guru').rows[1][4] = 'aktif';
 
 // --- Brute force lock ---
-const lock = createGas({ props: { REGISTER_CODE: REG }, sheets: { data: STUDENTS } });
+const lock = createGas({ sheets: { data: STUDENTS } });
 lock.post({ action: 'register', ...good });
 for (let i = 0; i < 5; i++) lock.post({ action: 'login', username: 'cikgu.aini', password: 'salah' + i });
 r = lock.post({ action: 'login', username: 'cikgu.aini', password: 'RahsiaBesar1' });
 assert.equal(r.ok, false); assert.match(r.error, /Terlalu banyak/, 'correct password must be refused while locked');
 
-console.log('PASS auth: register validation, hashed storage, login, session gate on every action, tab whitelist, write attribution, logout, disable, lockout.');
+console.log('PASS auth: open registration (Guru active, senior roles pending approval), rate limit, legacy accounts, Guru record-only access, staff access, evidence photos, role change, logout, disable, lockout.');

@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   var TAGLINE = ["Disiplin Pertama", "Kurikulum Utama", "Kokurikulum Bitara"];
-  var CREDIT = "Developed and managed by ustazashraf";
+  var CREDIT = "Dibangunkan dan diuruskan oleh ustazashraf";
   var VERSION = "v1.0";
 
   // Small credit line at the bottom of every page.
@@ -37,6 +37,33 @@
       }
     });
     return el;
+  }
+
+  // Signed-in name and role with a sign-out button, under the hero on every page.
+  function addUserBar() {
+    var auth = window.myDisiplinAuth;
+    var user = auth && auth.currentUser && auth.currentUser();
+    var main = document.querySelector("main");
+    if (!user || !main || document.querySelector(".user-bar")) return;
+    var bar = document.createElement("div");
+    bar.className = "user-bar";
+    var who = document.createElement("span");
+    who.className = "user-bar-name";
+    who.textContent = user.nama || user.username;
+    var role = document.createElement("span");
+    role.className = "user-bar-role";
+    role.textContent = user.peranan;
+    var out = document.createElement("button");
+    out.type = "button";
+    out.className = "user-bar-logout";
+    out.textContent = "Log Keluar";
+    out.addEventListener("click", function () { auth.signOut(); });
+    bar.appendChild(who);
+    bar.appendChild(role);
+    bar.appendChild(out);
+    var hero = main.querySelector(".hero");
+    if (hero) hero.insertAdjacentElement("afterend", bar);
+    else main.insertBefore(bar, main.firstChild);
   }
 
   function build() {
@@ -88,6 +115,9 @@
 
     // Full-width row under the title and logo.
     if (!hero.querySelector(".hero-tagline")) hero.appendChild(tagline());
+    addUserBar();
+    // The logo link was just added; point it at the role's own home page.
+    if (window.myDisiplinAuth && window.myDisiplinAuth.hideStaffLinks) window.myDisiplinAuth.hideStaffLinks();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build);
