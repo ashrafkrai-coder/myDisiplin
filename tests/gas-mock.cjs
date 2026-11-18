@@ -77,7 +77,7 @@ function createGas(options = {}) {
     };
   }
   vm.createContext(context);
-  for (const f of options.files || ['Auth.gs', 'Students.gs', 'Evidence.gs', 'Code.gs']) {
+  for (const f of options.files || ['Code.gs']) {
     const src = fs.readFileSync(path.join(__dirname, '../gas', f), 'utf8');
     // `const` at top level of a script is not a property of the context object; expose via var.
     vm.runInContext(src.replace(/^const /gm, 'var '), context);

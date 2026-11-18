@@ -1,22 +1,15 @@
-﻿# Setup Google Apps Script (Rekod Kes Baru)
+﻿# Sediakan Google Apps Script
 
-1. Buka Google Sheet anda (ID: `1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs`).
-2. Pergi ke `Extensions` -> `Apps Script`.
-3. Buang kod sedia ada dalam `Code.gs`, kemudian tampal kandungan fail `gas/Code.gs`.
-4. Klik `Deploy` -> `New deployment` -> jenis `Web app`.
-5. Tetapan deployment:
-   - Execute as: `Me`
-   - Who has access: `Anyone`
-6. Klik `Deploy`, kemudian salin `Web app URL`.
-7. Dalam fail `rekod-kes-baru.html`, isi nilai `GAS_ENDPOINT` dengan URL tadi.
+1. Buka Google Sheet (ID: `1n3_wQUNOO1iW8mFc-etoncKfuda4Ce94pusKv6s2vRs`).
+2. Pergi ke **Extensions → Apps Script**.
+3. Buka `Code.gs`, padam semua kandungannya, kemudian tampal **keseluruhan** fail `gas/Code.gs`.
+   Semua kod pelayan ada dalam fail ini sahaja. Padam fail `.gs` lain jika ada.
+4. Tekan **Simpan**.
+5. Deployment pertama: **Deploy → New deployment →** jenis **Web app**
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+   Kemas kini seterusnya: **Deploy → Manage deployments → Edit → New version → Deploy** (URL kekal sama).
+6. Salin **Web app URL** dan letakkan dalam `ENDPOINT` di `assets/auth.js`.
+7. Buka URL itu dalam pelayar: mesti memaparkan `"versi"` terkini dan `"tiada":[]`.
 
-Contoh:
-
-```js
-const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycb.../exec";
-```
-
-Nota:
-- Data akan ditulis ke tab `Rekod kes baru`.
-- Jika tab belum wujud, script akan cipta tab automatik.
-- Header akan dibuat automatik pada rekod pertama.
+Panduan penuh (peranan, kelulusan akaun, gambar bukti, uji sambungan): [SETUP_AKAUN_GURU.md](SETUP_AKAUN_GURU.md).

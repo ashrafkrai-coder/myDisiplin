@@ -19,11 +19,17 @@ Had akses dikuatkuasakan di pelayan (Apps Script), bukan sekadar disembunyikan p
 
 ## A. Kemas kini Apps Script (lakukan SEBELUM menerbitkan halaman baharu)
 
-1. Dalam projek Apps Script, fail mestilah: `Code.gs`, `Auth.gs`, **`Students.gs`**, **`Evidence.gs`** dan **`Diagnostik.gs`** (tiga terakhir baharu).
-   Salin kandungan daripada folder `gas/`. **Padam fail `Photos.gs`**; fungsi foto murid telah dibuang.
+1. Semua kod pelayan kini dalam **SATU fail sahaja: `gas/Code.gs`**.
+   - Dalam editor Apps Script, buka `Code.gs`, padam semua kandungannya, kemudian tampal **keseluruhan** `gas/Code.gs`.
+   - **Padam semua fail `.gs` lain** (`Auth.gs`, `Students.gs`, `Evidence.gs`, `Diagnostik.gs`, `Photos.gs`) jika ada.
+     Fail lama yang tertinggal boleh menimpa fungsi baharu.
+   - Tekan **Simpan** (ikon cakera / Ctrl+S) sebelum deploy.
 2. **Project Settings → Script Properties** (pilihan, pembersihan): `REGISTER_CODE`, `PHOTO_FOLDER_ID` dan semua property `photo_...` tidak lagi digunakan dan boleh dipadam.
-3. **Deploy → Manage deployments → Edit → Version: New version → Deploy.** Gunakan deployment sedia ada supaya URL kekal.
+3. **Deploy → Manage deployments → Edit (ikon pensel) → Version: New version → Deploy.** Gunakan deployment sedia ada supaya URL kekal.
+   Menyimpan sahaja TIDAK mencukupi: URL aplikasi menjalankan versi yang di-deploy, bukan kod dalam editor.
    Kali pertama gambar bukti dimuat naik, Google akan meminta kebenaran Drive. Pemilik skrip perlu benarkan.
+4. **Semak:** buka URL Web App dalam pelayar. Ia mesti memaparkan `"versi":"2026-11-18.1"` dan `"tiada":[]`.
+   Jika `versi` tiada atau berbeza, deploy belum dibuat dengan kod terkini. Jika `tiada` menyenaraikan nama fungsi, kod tidak ditampal sepenuhnya.
 
 ## B. Akaun sedia ada
 
